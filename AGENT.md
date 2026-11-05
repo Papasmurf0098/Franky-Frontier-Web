@@ -113,17 +113,22 @@ python3 -m franky run --state-dir /tmp/franky-state --out /tmp/franky-site --for
 
 **Tests passing locally does not prove the workflow works.** Only a real run on GitHub does. Check the Actions tab and the live site.
 
+**A folder may not be what it looks like.** On the owner's laptop, this checkout has the separate on-device repo sitting inside it at `Franky-web/`, with private scan data. It's excluded through `.git/info/exclude`, which only applies on that laptop. Never add it to this public repo.
+
 ## Current state
 
 Last updated November 4, 2026.
 
 **Checked:** 183 offline tests pass on Python 3.9 and 3.12. The workflow's steps ran in order against a local bare git repo standing in for GitHub, with three throwaway runners: the first scanned all 13 live sources and created `scan-state`, the second restored that history and added nothing new, and the third found nothing due. The built site was viewed in a browser under a sub-path, like Pages, with no storage used and no requests off the site. Hostile data ran no code. The stale, empty, and missing-data states were checked too.
 
-**Not checked, because this has never run on GitHub:**
-- The workflow on GitHub itself: Actions permissions, the Pages deployment, and the pinned action versions working together.
-- Whether every source answers from GitHub's cloud addresses. Some sites block them, and the laptop scan says nothing about this. Source health will show it.
+**First real run on GitHub, November 5, 2026 (UTC):** published as a public repo. Tests passed on the runner, all 13 sources answered from GitHub's cloud with no blocks, and the scan stored 41 findings and 17 watchlist items. History was saved to `scan-state` by `github-actions[bot]`. The run then failed at `configure-pages`, as expected, because Pages wasn't switched on yet.
+
+**Not checked yet:**
+- The Pages deployment and the live site, until **Settings > Pages > Source: GitHub Actions** is set. That needs the owner's sign-in.
+- A scheduled run, as opposed to the push-triggered first run.
 - Whether commits to `scan-state` count as "repository activity". GitHub disables schedules in public repos after 60 days without activity and doesn't define the term. If it doesn't count, the site's stale notice will appear, and re-enabling is one click in the Actions tab.
 - The banner with the system Reduce Motion setting actually on.
+- GitHub's notice that `ubuntu-latest` is moving to Ubuntu 26. Its `python3` version will change, and code needs to stay compatible.
 
 **Known gaps:**
 - GitHub can delay or drop scheduled runs under load, so 6 hours is a target.
