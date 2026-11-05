@@ -13,8 +13,8 @@ Agents working on this repo should read [AGENT.md](AGENT.md) first.
 You only need a GitHub account.
 
 1. Publish this repo to GitHub as a **public** repository. Free GitHub Pages only works on public repos, and everything here is public news anyway.
-2. Go to **Actions > Scan and publish > Run workflow**. This scans and creates the `gh-pages` branch.
-3. Go to **Settings > Pages**. Under **Source** choose **Deploy from a branch**, then pick `gh-pages`. A branch pushed by a workflow may not switch Pages on by itself, so check this even if the site seems close.
+2. Go to **Actions > Scan and publish > Run workflow**. This scans and creates the `gh-pages` branch. It may fail at its last step, **Ask GitHub Pages to rebuild**, because Pages isn't on yet.
+3. Go to **Settings > Pages**. Under **Source** choose **Deploy from a branch**, then pick `gh-pages`.
 4. Run the workflow once more.
 
 The site appears at `https://<your-username>.github.io/<repo-name>/`, and it updates itself from then on.
@@ -76,6 +76,8 @@ The page shows a warning when its data is more than 18 hours old. Check these in
 1. **Actions tab:** look for a failed run and open its log.
 2. **Scheduled runs paused:** GitHub turns off schedules in public repos after 60 days without activity. Open **Actions > Scan and publish** and press **Enable workflow**.
 3. **Delays:** GitHub can delay scheduled runs when it's busy, so a run or two may come late.
+
+A cancelled **pages build and deployment** beside a successful one is normal, and doesn't need fixing.
 
 If one source fails, Source health shows why. Some sites block cloud servers, and that source may simply not work from GitHub.
 

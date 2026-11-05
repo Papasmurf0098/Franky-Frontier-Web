@@ -114,17 +114,23 @@ python3 -m franky run --state-dir /tmp/franky-state --out /tmp/franky-site --for
 ```
 
 **Tests passing locally does not prove the workflow works.** Only a real run on GitHub does. Check the Actions tab and the live site.
+
 ## Current state
 
-Last updated November 4, 2026.
+Last updated November 5, 2026 (UTC).
 
-**Checked:** 183 offline tests pass on Python 3.9 and 3.12. The workflow's steps ran in order against a local bare git repo standing in for GitHub, with three throwaway runners: the first scanned all 13 live sources and created `scan-state`, the second restored that history and added nothing new, and the third found nothing due. The built site was viewed in a browser under a sub-path, like Pages, with no storage used and no requests off the site. Hostile data ran no code. The stale, empty, and missing-data states were checked too.
+**Live at <https://papasmurf0098.github.io/Franky-Frontier-Web/>.**
+
+**Checked:** 189 offline tests pass on Python 3.9 and 3.12. The workflow's steps ran in order against a local bare git repo standing in for GitHub, with three throwaway runners: the first scanned all 13 live sources and created `scan-state`, the second restored that history and added nothing new, and the third found nothing due. The built site was viewed in a browser under a sub-path, like Pages, with no storage used and no requests off the site. Hostile data ran no code. The stale, empty, and missing-data states were checked too.
 
 **First real run on GitHub, November 5, 2026 (UTC):** published as a public repo. Tests passed on the runner, all 13 sources answered from GitHub's cloud with no blocks, and the scan stored 41 findings and 17 watchlist items. History was saved to `scan-state` by `github-actions[bot]`. The run then failed at `configure-pages`, as expected, because Pages wasn't switched on yet.
 
+**First full run through `gh-pages`, November 5, 2026 (UTC):** a push-triggered run passed every step and replaced the branch with one commit from `github-actions[bot]`, which removed the stray `.DS_Store`. Its `generated_at` was on the live site within about a minute. No source was due, so it added nothing to `scan-state`. In a browser, the live page loaded its data, the banner paused and resumed, a report link opened, the console was empty, and nothing was stored.
+
 **Not checked yet:**
-- The Pages deployment and the live site, until **Settings > Pages > Source: GitHub Actions** is set. That needs the owner's sign-in.
-- A scheduled run, as opposed to the push-triggered first run.
+- A scheduled run, as opposed to a push-triggered one.
+- A run that finds something new and publishes it through `gh-pages`. The next scan with sources due should show this, and the steps are the same.
+- Whether the Pages build request is needed. On the first publish, two builds started a second apart and GitHub cancelled the first, which suggests the push may start a build after all. The API doesn't say which build came from what.
 - Whether commits to `scan-state` count as "repository activity". GitHub disables schedules in public repos after 60 days without activity and doesn't define the term. If it doesn't count, the site's stale notice will appear, and re-enabling is one click in the Actions tab.
 - The banner with the system Reduce Motion setting actually on.
 - GitHub's notice that `ubuntu-latest` is moving to Ubuntu 26. Its `python3` version will change, and code needs to stay compatible.
@@ -132,6 +138,7 @@ Last updated November 4, 2026.
 **Known gaps:**
 - GitHub can delay or drop scheduled runs under load, so 6 hours is a target.
 - Pages caches files for a few minutes, so new data can take a little while to appear.
+- The Actions tab can show a cancelled **pages build and deployment** beside a successful one. It's harmless, and is the cost of the build request.
 - Upvote and star counts on a card are from when the item was first found.
 - Community results aren't vetted. Trending models include some with safety training removed. To hide them, add words like `uncensored` and `abliterated` to `exclude_keywords` on that source. That's the owner's call.
 - Hacker News cards have thin summaries, because linked pages are never read.
@@ -143,7 +150,7 @@ Last updated November 4, 2026.
 Add a line when you make a decision a future agent might otherwise undo.
 
 - **2026-11-04: Web-only means GitHub Actions plus Pages.** It's free on public repos, needs no other account or server, and matches the original "GitHub-first" dashboard. The original failed because it depended on Render and a Google Apps Script feed.
-- **2026-11-04: Publish to a `gh-pages` branch, not with `actions/deploy-pages`.** The Actions source can only be chosen in Settings, which needs the owner's sign-in. Pushing `gh-pages` with the owner's credentials through GitHub Desktop switched Pages on by itself. GitHub's docs say pushes with the workflow's token don't start a build, so the workflow requests one.
+- **2026-11-04: Publish to a `gh-pages` branch, not with `actions/deploy-pages`.** The Actions source can only be chosen in Settings, which needs the owner's sign-in. Pushing `gh-pages` with the owner's credentials through GitHub Desktop switched Pages on by itself. GitHub's docs say pushes with the workflow's token don't start a build, so the workflow requests one. Keep the request even though a build may start without it: a spare cancelled build costs nothing, and a missing build leaves the site silently stale.
 - **2026-11-04: History is a SQL text file on its own branch.** A database file can't diff and bloats git. On `main` it would bury code changes and trigger the workflow.
 - **2026-11-04: Removed webhooks, the local API, and Scan now.** They need a running server. A link to the workflow page replaces the button, for the repo owner only.
 - **2026-11-04: Removed saved display preferences.** So "nothing is saved to your device" is literally true.
