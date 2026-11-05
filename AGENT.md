@@ -30,7 +30,9 @@ GitHub Actions, every 6 hours (.github/workflows/scan.yml)
   │
   ├─ ci/state.sh save ─► pushes scan-state
   │
-  └─ deploy to GitHub Pages ─► visitors load index.html, which fetches data.json
+  ├─ ci/publish.sh dist ─► replaces the gh-pages branch with the built site
+  │
+  └─ gh api pages/builds ─► GitHub Pages rebuilds, and visitors load index.html, which fetches data.json
 ```
 
 | To change | Edit |
@@ -46,8 +48,8 @@ GitHub Actions, every 6 hours (.github/workflows/scan.yml)
 1. **Nothing on the device.** No local server, installed app, or required local step. The page uses no cookies, `localStorage`, or other browser storage.
 2. **GitHub is the only platform.** No other hosting, database, or account. The whole system should keep working with only a GitHub repo.
 3. **Standard library only.** No `pip install`, no build step for the page, no framework. Keep code compatible with Python 3.9 and newer, since the runner's version changes over time.
-4. **History is append-safe.** `ci/state.sh` never force-pushes. A damaged `franky.sql` stops the run instead of starting over, because the next save would otherwise replace everything with an empty history.
-5. **Scan data never goes on `main`.** It stays on `scan-state`, so `main` is code only and code diffs stay readable.
+4. **History is append-safe.** `ci/state.sh` never force-pushes. A damaged `franky.sql` stops the run instead of starting over, because the next save would otherwise replace everything with an empty history. Only `ci/publish.sh` forces, and only onto `gh-pages`, which holds nothing but generated output.
+5. **Scan data never goes on `main`.** History stays on `scan-state`, and the built site on `gh-pages`, so `main` is code only and code diffs stay readable. Don't commit by hand to `gh-pages`, because the next publish replaces it.
 6. **Repeat scans change nothing.** An item is identified by its URL. Same content means no new row.
 7. **One broken source never stops a scan, and is never hidden.** Failures appear in source health, and the site still publishes.
 8. **Report honestly.** No sample or made-up findings. An unknown publish date stays unknown. A failed source means incomplete coverage, and the report says so.
@@ -112,9 +114,6 @@ python3 -m franky run --state-dir /tmp/franky-state --out /tmp/franky-site --for
 ```
 
 **Tests passing locally does not prove the workflow works.** Only a real run on GitHub does. Check the Actions tab and the live site.
-
-**A folder may not be what it looks like.** On the owner's laptop, this checkout has the separate on-device repo sitting inside it at `Franky-web/`, with private scan data. It's excluded through `.git/info/exclude`, which only applies on that laptop. Never add it to this public repo.
-
 ## Current state
 
 Last updated November 4, 2026.
@@ -144,6 +143,7 @@ Last updated November 4, 2026.
 Add a line when you make a decision a future agent might otherwise undo.
 
 - **2026-11-04: Web-only means GitHub Actions plus Pages.** It's free on public repos, needs no other account or server, and matches the original "GitHub-first" dashboard. The original failed because it depended on Render and a Google Apps Script feed.
+- **2026-11-04: Publish to a `gh-pages` branch, not with `actions/deploy-pages`.** The Actions source can only be chosen in Settings, which needs the owner's sign-in. Pushing `gh-pages` with the owner's credentials through GitHub Desktop switched Pages on by itself. GitHub's docs say pushes with the workflow's token don't start a build, so the workflow requests one.
 - **2026-11-04: History is a SQL text file on its own branch.** A database file can't diff and bloats git. On `main` it would bury code changes and trigger the workflow.
 - **2026-11-04: Removed webhooks, the local API, and Scan now.** They need a running server. A link to the workflow page replaces the button, for the repo owner only.
 - **2026-11-04: Removed saved display preferences.** So "nothing is saved to your device" is literally true.

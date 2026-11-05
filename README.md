@@ -2,17 +2,20 @@
 
 An at-home AI opportunity radar that lives entirely on the web. It checks a short list of AI sources, keeps what you could actually use at home, ranks it, and publishes it as a website.
 
+**Live site: <https://papasmurf0098.github.io/Franky-Frontier-Web/>**
+
 There's nothing to install or keep running. GitHub Actions does the scan every 6 hours, a branch in this repo keeps the history, and GitHub Pages serves the site. The page saves nothing on your device.
 
 Agents working on this repo should read [AGENT.md](AGENT.md) first.
 
-## Set it up
+## Set up your own copy
 
 You only need a GitHub account.
 
 1. Publish this repo to GitHub as a **public** repository. Free GitHub Pages only works on public repos, and everything here is public news anyway.
-2. In the repo, go to **Settings > Pages**, and under **Source** choose **GitHub Actions**.
-3. Go to **Actions > Scan and publish > Run workflow**. Publishing may already have started a run. If it failed at the Pages step because step 2 wasn't done yet, this fixes it.
+2. Go to **Actions > Scan and publish > Run workflow**. This scans and creates the `gh-pages` branch.
+3. Go to **Settings > Pages**. Under **Source** choose **Deploy from a branch**, then pick `gh-pages`. A branch pushed by a workflow may not switch Pages on by itself, so check this even if the site seems close.
+4. Run the workflow once more.
 
 The site appears at `https://<your-username>.github.io/<repo-name>/`, and it updates itself from then on.
 
@@ -81,7 +84,7 @@ If one source fails, Source health shows why. Some sites block cloud servers, an
 | What | Where |
 |---|---|
 | Scan history and reports | The `scan-state` branch, as readable text, so you can see what changed and when |
-| The published site | GitHub Pages, rebuilt on every run |
+| The published site | The `gh-pages` branch, replaced on every run, which GitHub Pages serves |
 | Code | The `main` branch |
 
 All of it is public, and it's built only from public sources. Nothing here needs a secret, and no secrets should ever be added.

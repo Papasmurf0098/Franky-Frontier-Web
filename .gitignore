@@ -1,5 +1,6 @@
 # Built during the GitHub Actions run. Never committed to main.
 .state/
+.pages/
 dist/
 
 __pycache__/

@@ -34,12 +34,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
-      contents: write # To save history to the scan-state branch.
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      contents: write # To save history to scan-state and publish to gh-pages.
+      pages: write # To ask GitHub Pages to rebuild.
     steps:
       # Actions are pinned to exact commits, so a moved tag can't change what runs here.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -65,11 +61,11 @@ jobs:
       - name: Save scan history
         run: ci/state.sh save .state
 
-      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - name: Publish the site to gh-pages
+        run: ci/publish.sh dist
 
-      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
-        with:
-          path: dist
-
-      - id: deployment
-        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+      - name: Ask GitHub Pages to rebuild
+        # GitHub's docs say pushes made with this workflow's token don't start a Pages build.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --method POST "repos/$GITHUB_REPOSITORY/pages/builds" --silent

@@ -204,9 +204,14 @@ class Workflow(unittest.TestCase):
 
     def test_every_action_is_pinned_to_a_full_commit(self):
         uses = re.findall(r"uses: (\S+)", WORKFLOW)
-        self.assertGreaterEqual(len(uses), 4)
+        self.assertGreaterEqual(len(uses), 1)
         for action in uses:
             self.assertRegex(action, r"@[0-9a-f]{40}$", action)
+
+    def test_publishes_then_asks_for_a_build(self):
+        # GitHub's docs say this token's pushes don't start a Pages build, so the order matters.
+        self.assertLess(WORKFLOW.index("ci/publish.sh dist"), WORKFLOW.index("pages/builds"))
+        self.assertLess(WORKFLOW.index("ci/state.sh save"), WORKFLOW.index("ci/publish.sh dist"))
 
     def test_runs_one_at_a_time(self):
         self.assertIn("concurrency:", WORKFLOW)
@@ -336,6 +341,50 @@ class StateBranch(unittest.TestCase):
         (self.work / ".state" / "franky.sql").write_text("one", encoding="utf-8")
         self.state("save")
         self.assertEqual(self.git("rev-parse", "main", cwd=self.remote), before)
+
+    def publish(self, files, cwd=None):
+        site = self.root / "site-build"
+        shutil.rmtree(str(site), ignore_errors=True)
+        site.mkdir()
+        for name, text in files.items():
+            (site / name).write_text(text, encoding="utf-8")
+        return subprocess.run([str(REPO / "ci" / "publish.sh"), str(site)], cwd=str(cwd or self.work), capture_output=True, text=True)
+
+    def test_publishing_creates_the_pages_branch_with_only_the_site(self):
+        result = self.publish({"index.html": "<p>one</p>", "data.json": "{}", ".nojekyll": ""})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        files = self.git("ls-tree", "-r", "--name-only", "gh-pages", cwd=self.remote).split()
+        self.assertEqual(sorted(files), [".nojekyll", "data.json", "index.html"])
+
+    def test_publishing_replaces_the_branch_including_old_files(self):
+        # Removes anything else committed there, such as a stray .DS_Store from Finder.
+        self.publish({"index.html": "one", ".DS_Store": "junk"})
+        result = self.publish({"index.html": "two"})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.git("ls-tree", "-r", "--name-only", "gh-pages", cwd=self.remote).split(), ["index.html"])
+        self.assertEqual(self.git("show", "gh-pages:index.html", cwd=self.remote), "two")
+        self.assertEqual(len(self.git("log", "--oneline", "gh-pages", cwd=self.remote).splitlines()), 1)
+
+    def test_publishing_never_touches_main_or_the_history_branch(self):
+        self.state("restore")
+        (self.work / ".state" / "franky.sql").write_text("one", encoding="utf-8")
+        self.state("save")
+        main = self.git("rev-parse", "main", cwd=self.remote)
+        history = self.git("rev-parse", "scan-state", cwd=self.remote)
+        self.publish({"index.html": "site"})
+        self.assertEqual(self.git("rev-parse", "main", cwd=self.remote), main)
+        self.assertEqual(self.git("rev-parse", "scan-state", cwd=self.remote), history)
+
+    def test_publishing_leaves_the_checkout_alone(self):
+        self.publish({"index.html": "site"})
+        self.assertFalse((self.work / ".pages").exists())
+        self.assertEqual((self.work / "code.txt").read_text(encoding="utf-8"), "code")
+        self.assertEqual(self.git("status", "--porcelain"), "")
+
+    def test_publishing_refuses_a_missing_site(self):
+        result = self.publish({"other.txt": "no page here"})
+        self.assertNotEqual(result.returncode, 0)
+        self.assertNotIn("gh-pages", self.git("ls-remote", "origin"))
 
     def test_unreachable_remote_fails_instead_of_starting_a_new_history(self):
         self.git("remote", "set-url", "origin", "file://%s/nope.git" % self.root)
