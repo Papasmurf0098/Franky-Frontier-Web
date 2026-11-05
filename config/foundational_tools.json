@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "note": "Hand-kept starter shelf. The scanner never edits this file. Pricing is left out on purpose because it goes stale.",
+  "tools": [
+    {
+      "tool_id": "chatgpt",
+      "tool_name": "ChatGPT",
+      "category": "Assistant",
+      "core_use_case": "General-purpose AI assistant and workflow drafting",
+      "accessibility": "Both | No-code",
+      "why_foundational": "Carried over from the original Franky starter workbook."
+    },
+    {
+      "tool_id": "claude",
+      "tool_name": "Claude",
+      "category": "Assistant",
+      "core_use_case": "Long documents, writing, and coding help",
+      "accessibility": "Both | No-code",
+      "why_foundational": "Everyday assistant with desktop and phone apps."
+    },
+    {
+      "tool_id": "gemini",
+      "tool_name": "Gemini",
+      "category": "Assistant",
+      "core_use_case": "Assistant tied into Google apps and search",
+      "accessibility": "Both | No-code",
+      "why_foundational": "Useful when your work already lives in Google apps."
+    },
+    {
+      "tool_id": "zapier",
+      "tool_name": "Zapier",
+      "category": "Automation",
+      "core_use_case": "Connect apps and automate routine steps",
+      "accessibility": "Laptop | No-code",
+      "why_foundational": "A common way to automate without writing code."
+    },
+    {
+      "tool_id": "hugging-face",
+      "tool_name": "Hugging Face",
+      "category": "Models",
+      "core_use_case": "Find and try open models and demos",
+      "accessibility": "Laptop | Low-code",
+      "why_foundational": "The main public library for open models."
+    },
+    {
+      "tool_id": "ollama",
+      "tool_name": "Ollama",
+      "category": "Local models",
+      "core_use_case": "Run open models on your own laptop",
+      "accessibility": "Laptop | Low-code | Runs locally",
+      "why_foundational": "A simple way to run models without a cloud service."
+    },
+    {
+      "tool_id": "lm-studio",
+      "tool_name": "LM Studio",
+      "category": "Local models",
+      "core_use_case": "Download and chat with local models in a desktop app",
+      "accessibility": "Laptop | No-code | Runs locally",
+      "why_foundational": "Local models with no terminal needed."
+    },
+    {
+      "tool_id": "whisper",
+      "tool_name": "Whisper",
+      "category": "Speech",
+      "core_use_case": "Turn audio into text on your own machine",
+      "accessibility": "Laptop | Code | Runs locally",
+      "why_foundational": "Open speech-to-text model that many tools build on."
+    }
+  ]
+}

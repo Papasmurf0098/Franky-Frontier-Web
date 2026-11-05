@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#0a0613" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; img-src data:; base-uri 'none'; form-action 'none'" />
+  <title>Franky Frontier</title>
+  <style>
+    :root {
+      color-scheme: dark;
+
+      --obsidian-950: #0a0613;
+      --obsidian-900: #110a20;
+      --obsidian-800: #1a1030;
+      --obsidian-700: #261848;
+      --violet-500: #7b4dff;
+      --violet-300: #bda6ff;
+      --turquoise-400: #35e2d0;
+      --turquoise-200: #a6f5ec;
+      --ink-on-turquoise: #04211e;
+
+      --text: #f4f1fb;
+      --text-soft: #cdc6e0;
+      --text-faint: #a89fc2;
+      --amber: #ffc978;
+      --coral: #ff9aa8;
+
+      /* Blur is costly, so only the banner, masthead, lead story and side panels use it. */
+      --glass: rgba(24, 15, 46, 0.66);
+      --glass-card: rgba(30, 19, 56, 0.72);
+      --glass-bar: rgba(10, 6, 19, 0.82);
+      --glass-solid: #1a1030;
+      --glass-line: rgba(255, 255, 255, 0.11);
+      --glass-shine: rgba(255, 255, 255, 0.09);
+      --glass-blur: blur(14px) saturate(140%);
+
+      --serif: ui-serif, "New York", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+      --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+
+      --radius-l: 20px;
+      --radius-m: 14px;
+      --radius-s: 10px;
+      --ticker-h: 44px;
+      --mast-h: 68px;
+      --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+      --z-masthead: 20;
+      --z-ticker: 30;
+      --z-skip: 50;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+
+    html { -webkit-text-size-adjust: 100%; scroll-padding-top: calc(var(--ticker-h) + var(--mast-h) + 16px); }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      overflow-x: clip;
+      background: var(--obsidian-950);
+      color: var(--text);
+      font: 400 16px/1.55 var(--sans);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3, h4, p, ul, ol { margin: 0; padding: 0; }
+    ul, ol { list-style: none; }
+    a { color: inherit; text-decoration: none; }
+    button, input, select { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    summary { cursor: pointer; }
+    svg { display: block; }
+
+    :focus-visible { outline: 2px solid var(--turquoise-400); outline-offset: 2px; border-radius: 6px; }
+    /* The skip link moves focus here, but a whole section isn't something you can act on. */
+    main:focus, main:focus-visible { outline: none; }
+
+    .sr-only {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+    }
+
+    .skip-link {
+      position: absolute; top: -100px; left: 12px; z-index: var(--z-skip);
+      padding: 10px 16px; border-radius: var(--radius-s);
+      background: var(--turquoise-400); color: var(--ink-on-turquoise); font-weight: 700;
+    }
+    .skip-link:focus { top: 8px; }
+
+    /* Obsidian: a dark stone with fractured facets, lit in turquoise and violet. Glass needs
+       something behind it to look like glass, and this layer costs nothing to scroll. */
+    .backdrop {
+      position: fixed; inset: 0; z-index: -1; pointer-events: none;
+      background:
+        radial-gradient(60vw 50vh at 10% -5%, rgba(53, 226, 208, 0.2), transparent 70%),
+        radial-gradient(70vw 60vh at 92% 8%, rgba(123, 77, 255, 0.34), transparent 72%),
+        radial-gradient(80vw 70vh at 68% 106%, rgba(90, 40, 200, 0.28), transparent 70%),
+        linear-gradient(170deg, #140c26 0%, #0a0613 55%, #0d0818 100%);
+    }
+    .backdrop::after {
+      content: ""; position: absolute; inset: 0; background-size: cover;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 1000' preserveAspectRatio='xMidYMid slice'%3E%3Cg fill='%23fff'%3E%3Cpath fill-opacity='.026' d='M0 0h560L300 400z'/%3E%3Cpath fill-opacity='.014' d='M560 0h420L720 330z'/%3E%3Cpath fill-opacity='.03' d='M980 0h620v260L1240 420z'/%3E%3Cpath fill-opacity='.012' d='M0 400l300 0 180 340L0 900z'/%3E%3Cpath fill-opacity='.024' d='M300 400l420-70 160 420-400-10z'/%3E%3Cpath fill-opacity='.012' d='M720 330l520 90-120 400-240-70z'/%3E%3Cpath fill-opacity='.022' d='M1240 420l360-160v500l-480 60z'/%3E%3Cpath fill-opacity='.016' d='M0 900l480-160 400 10-120 250H0z'/%3E%3Cpath fill-opacity='.024' d='M880 750l240 70 480-60v240H760z'/%3E%3C/g%3E%3C/svg%3E");
+    }
+
+    .glass {
+      background: var(--glass);
+      -webkit-backdrop-filter: var(--glass-blur);
+      backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--glass-line);
+      box-shadow: inset 0 1px 0 var(--glass-shine), 0 18px 40px rgba(4, 2, 12, 0.45);
+    }
+
+    /* ---------- Headline banner ---------- */
+
+    .ticker {
+      position: sticky; top: 0; z-index: var(--z-ticker);
+      display: flex; align-items: stretch;
+      height: var(--ticker-h);
+      background: var(--glass-bar);
+      -webkit-backdrop-filter: var(--glass-blur);
+      backdrop-filter: var(--glass-blur);
+      border-bottom: 1px solid rgba(53, 226, 208, 0.3);
+    }
+    .ticker-label {
+      flex: none; display: flex; align-items: center; gap: 8px; padding: 0 14px 0 16px;
+      font: 700 0.72rem/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--ink-on-turquoise); background: var(--turquoise-400);
+    }
+    .ticker-viewport {
+      flex: 1; min-width: 0; overflow: hidden;
+      scrollbar-width: none;
+      -webkit-mask-image: linear-gradient(90deg, transparent, #000 24px, #000 calc(100% - 24px), transparent);
+      mask-image: linear-gradient(90deg, transparent, #000 24px, #000 calc(100% - 24px), transparent);
+    }
+    .ticker-viewport::-webkit-scrollbar { display: none; }
+    .ticker-track {
+      display: flex; width: max-content; height: 100%;
+      animation: ticker-roll var(--ticker-duration, 80s) linear infinite;
+      will-change: transform;
+    }
+    @keyframes ticker-roll { to { transform: translate3d(calc(-1 * var(--ticker-shift, 50%)), 0, 0); } }
+    .ticker-group { display: flex; align-items: stretch; height: 100%; }
+    .ticker-item { display: flex; align-items: center; }
+    .ticker-item::after {
+      content: ""; flex: none; width: 5px; height: 5px; margin: 0 4px;
+      background: var(--violet-300); opacity: 0.55; transform: rotate(45deg);
+    }
+    .ticker-link {
+      display: flex; align-items: center; gap: 10px; height: 100%; padding: 0 16px;
+      white-space: nowrap; font-size: 0.875rem; transition: color 160ms var(--ease);
+    }
+    .ticker-link:hover { color: var(--turquoise-200); }
+    .ticker-link:focus-visible { outline-offset: -3px; }
+    .ticker-source { font: 600 0.72rem/1 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--turquoise-400); }
+    .ticker-priority { font: 700 0.66rem/1 var(--mono); letter-spacing: 0.06em; padding: 3px 5px; border-radius: 4px; }
+    .ticker-priority.is-high { color: var(--ink-on-turquoise); background: var(--turquoise-400); }
+    .ticker-priority.is-medium { color: var(--violet-300); box-shadow: inset 0 0 0 1px rgba(189, 166, 255, 0.55); }
+    .ticker-priority.is-low, .ticker-priority.is-unrated { color: var(--text-faint); box-shadow: inset 0 0 0 1px rgba(168, 159, 194, 0.4); }
+    .ticker-headline { font-weight: 500; }
+    .ticker-when { font: 500 0.72rem/1 var(--mono); color: var(--text-faint); }
+    .ticker-empty { display: flex; align-items: center; height: 100%; padding: 0 16px; font-size: 0.875rem; color: var(--text-soft); white-space: nowrap; }
+    .ticker-toggle {
+      flex: none; width: var(--ticker-h); display: grid; place-items: center;
+      background: transparent; border: 0; border-left: 1px solid var(--glass-line); color: var(--text);
+      transition: color 160ms var(--ease), background-color 160ms var(--ease);
+    }
+    .ticker-toggle:hover { color: var(--turquoise-400); background: rgba(255, 255, 255, 0.05); }
+    .ticker-toggle:focus-visible { outline-offset: -3px; }
+    .ticker-toggle .icon-play { display: none; }
+    .ticker.is-paused .ticker-toggle .icon-play { display: block; }
+    .ticker.is-paused .ticker-toggle .icon-pause { display: none; }
+
+    @media (hover: hover) {
+      .ticker-viewport:hover .ticker-track { animation-play-state: paused; }
+    }
+    .ticker.is-paused .ticker-track { animation-play-state: paused; }
+    .ticker.is-paused .ticker-viewport { overflow-x: auto; }
+    /* Keyboard users: stop moving and let the browser scroll the focused headline into view. */
+    .ticker.is-manual .ticker-track { animation: none; }
+    .ticker.is-manual .ticker-viewport { overflow-x: auto; }
+    .ticker.is-empty .ticker-track { animation: none; }
+    .ticker.is-empty .ticker-toggle { display: none; }
+
+    /* ---------- Masthead ---------- */
+
+    .masthead {
+      position: sticky; top: var(--ticker-h); z-index: var(--z-masthead);
+      background: rgba(17, 10, 32, 0.68);
+      -webkit-backdrop-filter: var(--glass-blur);
+      backdrop-filter: var(--glass-blur);
+      border-bottom: 1px solid var(--glass-line);
+    }
+    .masthead-inner, .page { width: min(100%, 1360px); margin: 0 auto; padding-left: 24px; padding-right: 24px; }
+    .masthead-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: var(--mast-h); padding-top: 10px; padding-bottom: 10px; }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .brand-mark { flex: none; width: 34px; height: 34px; }
+    .brand h1 { font: 600 1.3rem/1.15 var(--serif); letter-spacing: -0.01em; }
+    .brand p { font-size: 0.8rem; line-height: 1.3; color: var(--text-faint); }
+    .scan-area { display: flex; align-items: center; gap: 14px; min-width: 0; }
+    .scan-status { font-size: 0.85rem; color: var(--text-soft); text-align: right; }
+    .scan-status strong { font-weight: 600; color: var(--text); }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      min-height: 42px; padding: 0 18px; border-radius: var(--radius-s);
+      border: 1px solid var(--glass-line); background: rgba(255, 255, 255, 0.06);
+      font-weight: 600; font-size: 0.9rem; white-space: nowrap;
+      transition: background-color 160ms var(--ease), border-color 160ms var(--ease), filter 160ms var(--ease);
+    }
+    .btn:hover { background: rgba(255, 255, 255, 0.11); border-color: rgba(255, 255, 255, 0.2); }
+
+    .notice {
+      background: rgba(255, 201, 120, 0.12); border-bottom: 1px solid rgba(255, 201, 120, 0.4);
+      color: var(--amber); font-size: 0.9rem;
+    }
+    .notice-inner { width: min(100%, 1360px); margin: 0 auto; padding: 10px 24px; }
+
+    /* ---------- Page layout ---------- */
+
+    .page { padding-top: 24px; padding-bottom: 56px; display: grid; gap: 24px; }
+
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .stat {
+      display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+      padding: 12px 16px; text-align: left; border-radius: var(--radius-m);
+      background: var(--glass-card); border: 1px solid var(--glass-line);
+      transition: border-color 160ms var(--ease), background-color 160ms var(--ease);
+    }
+    .stat:hover { border-color: rgba(53, 226, 208, 0.55); }
+    .stat[aria-pressed="true"] { border-color: var(--turquoise-400); background: rgba(53, 226, 208, 0.1); }
+    .stat-label { font-size: 0.82rem; color: var(--text-soft); }
+    .stat-value { font: 600 1.35rem/1 var(--mono); font-variant-numeric: tabular-nums; color: var(--turquoise-200); }
+
+    .front { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 16px; }
+
+    .lead {
+      position: relative; display: flex; flex-direction: column; justify-content: flex-end; gap: 14px;
+      min-height: 360px; padding: 32px; border-radius: var(--radius-l); border: 1px solid transparent;
+      background:
+        linear-gradient(150deg, rgba(38, 24, 72, 0.76), rgba(17, 10, 32, 0.74)) padding-box,
+        linear-gradient(130deg, rgba(53, 226, 208, 0.75), rgba(123, 77, 255, 0.55) 55%, rgba(255, 255, 255, 0.08)) border-box;
+      -webkit-backdrop-filter: var(--glass-blur);
+      backdrop-filter: var(--glass-blur);
+      box-shadow: inset 0 1px 0 var(--glass-shine), 0 24px 60px rgba(4, 2, 12, 0.5);
+      transition: box-shadow 200ms var(--ease);
+    }
+    .lead:hover { box-shadow: inset 0 1px 0 var(--glass-shine), 0 24px 70px rgba(53, 226, 208, 0.16); }
+    .kicker { font: 600 0.74rem/1.2 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--turquoise-400); }
+    .lead h3 { font: 600 clamp(1.8rem, 3.1vw, 3rem)/1.1 var(--serif); letter-spacing: -0.018em; text-wrap: balance; }
+    .lead-summary { font-size: 1.1rem; line-height: 1.5; color: var(--text-soft); max-width: 62ch; }
+
+    .story-link::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+    .story-link:focus-visible { outline: none; }
+    .story-link:focus-visible::after { outline: 2px solid var(--turquoise-400); outline-offset: 2px; }
+    .story-link:hover { color: var(--turquoise-200); }
+    .story-link { transition: color 160ms var(--ease); }
+
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 0.8rem; color: var(--text-faint); }
+    .meta-source { font-weight: 600; color: var(--text-soft); }
+    .meta > * + *::before { content: "·"; margin-right: 8px; color: var(--text-faint); }
+
+    .use { font-size: 0.92rem; color: var(--text-soft); padding-left: 12px; border-left: 2px solid var(--turquoise-400); }
+    .use b { font-weight: 600; color: var(--text); }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-size: 0.74rem; font-weight: 600; color: var(--text-soft); background: rgba(255, 255, 255, 0.07); }
+    .chip.is-high { color: var(--ink-on-turquoise); background: var(--turquoise-400); }
+    .chip.is-medium { color: var(--violet-300); background: rgba(123, 77, 255, 0.2); }
+    .chip.is-low, .chip.is-unrated { color: var(--text-faint); background: rgba(255, 255, 255, 0.05); }
+    .chip.is-local { color: var(--turquoise-200); box-shadow: inset 0 0 0 1px rgba(53, 226, 208, 0.5); background: transparent; }
+
+    .panel { border-radius: var(--radius-l); padding: 20px; }
+    .panel-title { font: 600 0.74rem/1.2 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--violet-300); }
+
+    .top-list { display: flex; flex-direction: column; gap: 4px; }
+    .top-list ol { display: flex; flex-direction: column; flex: 1; justify-content: space-between; margin-top: 8px; }
+    .top-item { position: relative; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 2px 8px; padding: 12px 0; border-top: 1px solid var(--glass-line); }
+    .top-item:first-child { border-top: 0; }
+    .top-rank { font: 600 0.95rem/1.5 var(--mono); color: var(--turquoise-400); }
+    .top-item h3 { font: 600 1.08rem/1.28 var(--serif); }
+    .top-item .meta { grid-column: 2; }
+
+    .columns { display: grid; grid-template-columns: minmax(0, 1fr) 348px; gap: 24px; align-items: start; }
+
+    /* ---------- Feed and filters ---------- */
+
+    .feed-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; margin-bottom: 12px; }
+    .feed-head h2 { font: 600 1.5rem/1.2 var(--serif); letter-spacing: -0.01em; }
+    .feed-status { font-size: 0.85rem; color: var(--text-faint); }
+
+    .controls { display: grid; gap: 12px; padding: 14px; border-radius: var(--radius-m); margin-bottom: 20px; background: var(--glass-card); border: 1px solid var(--glass-line); }
+    .controls-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tab {
+      min-height: 38px; padding: 0 13px; border-radius: 999px; border: 1px solid transparent;
+      background: rgba(255, 255, 255, 0.06); font-size: 0.86rem; font-weight: 600; color: var(--text-soft);
+      transition: background-color 160ms var(--ease), color 160ms var(--ease), border-color 160ms var(--ease);
+    }
+    .tab:hover { color: var(--text); background: rgba(255, 255, 255, 0.11); }
+    .tab[aria-pressed="true"] { color: var(--ink-on-turquoise); background: var(--turquoise-400); }
+
+    .search { position: relative; flex: 1 1 240px; min-width: 0; display: block; }
+    .search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-faint); pointer-events: none; }
+    .search input, .field select {
+      width: 100%; min-height: 42px; border-radius: var(--radius-s); font-size: 16px;
+      background: rgba(10, 6, 19, 0.55); border: 1px solid rgba(255, 255, 255, 0.16); color: var(--text);
+      transition: border-color 160ms var(--ease);
+    }
+    .search input { padding: 0 12px 0 36px; }
+    .search input::placeholder { color: var(--text-faint); opacity: 1; }
+    .search input:hover, .field select:hover { border-color: rgba(255, 255, 255, 0.3); }
+    .search input:focus-visible, .field select:focus-visible { border-color: var(--turquoise-400); outline-offset: 0; }
+
+    .toggles { display: flex; flex-wrap: wrap; gap: 12px; }
+    .toggle-group { display: inline-flex; align-items: center; padding: 3px; border-radius: var(--radius-s); background: rgba(10, 6, 19, 0.55); border: 1px solid rgba(255, 255, 255, 0.12); }
+    .toggle-group button { min-height: 34px; padding: 0 11px; border: 0; border-radius: 7px; background: transparent; font-size: 0.82rem; font-weight: 600; color: var(--text-soft); transition: background-color 160ms var(--ease), color 160ms var(--ease); }
+    .toggle-group button:hover { color: var(--text); }
+    .toggle-group button[aria-pressed="true"] { color: var(--text); background: rgba(123, 77, 255, 0.5); }
+
+    /* One disclosure arrow everywhere, so anything that opens looks like it opens. */
+    .more-filters summary, .sources summary, .watch-item summary { list-style: none; }
+    .more-filters summary::-webkit-details-marker, .sources summary::-webkit-details-marker, .watch-item summary::-webkit-details-marker { display: none; }
+    .more-filters summary::before, .sources summary::after, .watch-item summary::after {
+      content: ""; flex: none; width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+      transform: rotate(-45deg); transition: transform 160ms var(--ease);
+    }
+    .more-filters[open] summary::before, .sources[open] summary::after, .watch-item details[open] summary::after { transform: rotate(45deg); }
+
+    .more-filters summary { display: flex; align-items: center; gap: 10px; min-height: 36px; font-size: 0.86rem; font-weight: 600; color: var(--text-soft); }
+    .more-filters summary:hover { color: var(--text); }
+    .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-top: 10px; }
+    .field { display: grid; gap: 5px; }
+    .field label { font-size: 0.78rem; font-weight: 600; color: var(--text-soft); }
+    .field select { padding: 0 10px; }
+    .field select option { background: var(--obsidian-800); }
+    .clear-row { margin-top: 10px; }
+
+    .feed { display: grid; gap: 24px; }
+    .group-title { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font: 600 0.74rem/1.2 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--violet-300); }
+    .group-title::after { content: ""; flex: 1; height: 1px; background: var(--glass-line); }
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 12px; }
+
+    /* Cards are not blurred: many blurred layers in a scrolling list would slow the page. */
+    .card {
+      position: relative; display: flex; flex-direction: column; gap: 9px; padding: 16px;
+      border-radius: var(--radius-m); background: var(--glass-card); border: 1px solid var(--glass-line);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      transition: border-color 160ms var(--ease), background-color 160ms var(--ease);
+    }
+    .card:hover { border-color: rgba(53, 226, 208, 0.55); background: rgba(38, 24, 72, 0.8); }
+    .card h4 { font: 600 1.14rem/1.28 var(--serif); }
+    .card-summary { font-size: 0.92rem; color: var(--text-soft); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; }
+    .card-note { font-size: 0.78rem; color: var(--text-faint); }
+    .card .chips { margin-top: auto; padding-top: 2px; }
+
+    .feed.is-list .cards { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+    .feed.is-list .card { padding: 12px 16px; }
+    .feed.is-list .card-summary, .feed.is-list .use, .feed.is-list .card-note { display: none; }
+
+    .empty { padding: 28px 20px; text-align: center; border-radius: var(--radius-m); color: var(--text-soft); background: var(--glass-card); border: 1px solid var(--glass-line); }
+    .empty b { display: block; margin-bottom: 4px; font: 600 1.15rem/1.3 var(--serif); color: var(--text); }
+    .empty code { font-family: var(--mono); font-size: 0.9em; color: var(--turquoise-200); }
+
+    /* ---------- Side rail ---------- */
+
+    .rail { display: grid; gap: 16px; }
+    .rail .panel { display: grid; gap: 12px; }
+    .memo-takeaway { font: 600 1.14rem/1.32 var(--serif); }
+    .memo-text { font-size: 0.9rem; color: var(--text-soft); }
+    .memo-facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 3px 12px; font-size: 0.82rem; }
+    .memo-facts dt { color: var(--text-faint); }
+    .memo-facts dd { margin: 0; color: var(--text-soft); text-align: right; }
+    .text-link { display: inline-flex; align-items: center; gap: 5px; font-size: 0.86rem; font-weight: 600; color: var(--turquoise-400); text-decoration: underline; text-decoration-color: rgba(53, 226, 208, 0.4); text-underline-offset: 3px; transition: text-decoration-color 160ms var(--ease); }
+    .text-link:hover { text-decoration-color: currentColor; }
+
+    .rail-list > li { padding: 10px 0; border-top: 1px solid var(--glass-line); }
+    .rail-list > li:first-child { border-top: 0; padding-top: 0; }
+    .rail-list > li:last-child { padding-bottom: 0; }
+
+    .watch-item summary { position: relative; display: grid; gap: 5px; padding-right: 22px; }
+    .watch-item summary::after { position: absolute; top: 8px; right: 4px; color: var(--text-faint); }
+    .watch-title { font-size: 0.92rem; font-weight: 600; line-height: 1.35; transition: color 160ms var(--ease); }
+    .watch-item summary:hover .watch-title { color: var(--turquoise-200); }
+    .watch-body { display: grid; gap: 7px; margin-top: 8px; font-size: 0.85rem; color: var(--text-soft); }
+    .watch-body b { font-weight: 600; color: var(--text); }
+    .chip.is-category { width: fit-content; }
+    .chip.is-frontier { color: var(--amber); background: rgba(255, 201, 120, 0.12); }
+
+    .tool-name { font-size: 0.92rem; font-weight: 600; }
+    .tool-use { font-size: 0.84rem; color: var(--text-soft); }
+    .tool-access { font-size: 0.76rem; color: var(--text-faint); }
+
+    .sources summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 36px; font-size: 0.9rem; font-weight: 600; }
+    .sources summary:hover { color: var(--turquoise-200); }
+    .sources .rail-list { margin-top: 10px; }
+    .source-name { display: flex; align-items: center; gap: 8px; font-size: 0.88rem; font-weight: 600; }
+    .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--text-faint); }
+    .tone-good .dot { background: var(--turquoise-400); }
+    .tone-warn .dot { background: var(--amber); }
+    .tone-bad .dot { background: var(--coral); }
+    .source-state { margin-top: 2px; padding-left: 16px; font-size: 0.78rem; color: var(--text-faint); overflow-wrap: anywhere; }
+    .tone-warn .source-state { color: var(--amber); }
+    .tone-bad .source-state { color: var(--coral); }
+
+    .show-more { width: 100%; }
+
+    .footer { font-size: 0.8rem; color: var(--text-faint); text-align: center; padding-top: 8px; }
+
+    /* ---------- Responsive ---------- */
+
+    @media (max-width: 1100px) {
+      .columns { grid-template-columns: minmax(0, 1fr); }
+      .rail { grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); align-items: start; }
+    }
+
+    @media (max-width: 880px) {
+      .front { grid-template-columns: minmax(0, 1fr); }
+      .lead { min-height: 0; }
+    }
+
+    @media (max-width: 720px) {
+      html { scroll-padding-top: calc(var(--ticker-h) + 12px); }
+      .masthead { position: static; }
+      .masthead-inner { flex-wrap: wrap; }
+      .scan-area { width: 100%; justify-content: space-between; }
+      .scan-status { text-align: left; }
+      .masthead-inner, .page { padding-left: 16px; padding-right: 16px; }
+      .notice-inner { padding-left: 16px; padding-right: 16px; }
+      .page { padding-top: 16px; gap: 16px; }
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .lead { min-height: 0; padding: 22px; }
+      .lead-summary { font-size: 1rem; }
+      .ticker-label { padding: 0 12px; }
+      .ticker-link { font-size: 0.82rem; }
+    }
+
+    @media (pointer: coarse) {
+      .tab, .toggle-group button, .btn { min-height: 44px; }
+      .search input, .field select { min-height: 44px; }
+      .more-filters summary, .sources summary { min-height: 44px; }
+      .stat { min-height: 44px; }
+    }
+
+    /* ---------- Accessibility preferences and fallbacks ---------- */
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition-duration: 0.01ms !important; }
+      .ticker-track { animation: none; }
+      .ticker-viewport { overflow-x: auto; }
+      .ticker-toggle { display: none; }
+    }
+
+    /* Without blur, or for people who ask for less transparency, panels become solid. */
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+      .glass, .masthead { background: var(--glass-solid); }
+      .ticker { background: var(--obsidian-950); }
+      .lead { background: linear-gradient(150deg, var(--obsidian-700), var(--obsidian-900)) padding-box, linear-gradient(130deg, var(--turquoise-400), var(--violet-500)) border-box; }
+    }
+    @media (prefers-reduced-transparency: reduce) {
+      .glass, .masthead, .card, .controls, .stat, .empty { background: var(--glass-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
+      .ticker { background: var(--obsidian-950); -webkit-backdrop-filter: none; backdrop-filter: none; }
+      .lead { background: linear-gradient(150deg, var(--obsidian-700), var(--obsidian-900)) padding-box, linear-gradient(130deg, var(--turquoise-400), var(--violet-500)) border-box; -webkit-backdrop-filter: none; backdrop-filter: none; }
+    }
+    @media (prefers-contrast: more) {
+      :root { --text-soft: #e8e3f5; --text-faint: #cdc6e0; --glass-line: rgba(255, 255, 255, 0.4); }
+    }
+  </style>
+</head>
+<body>
+  <div class="backdrop" aria-hidden="true"></div>
+  <a class="skip-link" href="#main">Skip to findings</a>
+
+  <section class="ticker" id="ticker" aria-label="Latest headlines">
+    <div class="ticker-label">Latest</div>
+    <div class="ticker-viewport" id="tickerViewport">
+      <div class="ticker-track" id="tickerTrack"><p class="ticker-empty">Loading headlines...</p></div>
+    </div>
+    <button class="ticker-toggle" id="tickerToggle" type="button" aria-label="Pause headlines" title="Pause headlines">
+      <svg class="icon-pause" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="3" y="2" width="3.5" height="12" rx="1"/><rect x="9.5" y="2" width="3.5" height="12" rx="1"/></svg>
+      <svg class="icon-play" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4 2.6c0-.8.9-1.3 1.6-.8l8 5.4c.6.4.6 1.2 0 1.6l-8 5.4c-.7.5-1.6 0-1.6-.8z"/></svg>
+    </button>
+  </section>
+
+  <header class="masthead">
+    <div class="masthead-inner">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+          <defs><linearGradient id="gem" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#35e2d0"/><stop offset="1" stop-color="#7b4dff"/></linearGradient></defs>
+          <path d="M16 2 28 11 23 29H9L4 11z" fill="url(#gem)"/>
+          <path d="M16 2 11 11.5 16 29l5-17.5zM4 11h24" fill="none" stroke="#0a0613" stroke-opacity=".55" stroke-width="1.2" stroke-linejoin="round"/>
+        </svg>
+        <div>
+          <h1>Franky Frontier</h1>
+          <p>At-home AI opportunity radar</p>
+        </div>
+      </div>
+      <div class="scan-area">
+        <p class="scan-status" id="scanStatus" role="status">Loading...</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="notice" id="notice" role="alert" hidden><div class="notice-inner" id="noticeText"></div></div>
+
+  <div class="page" id="page">
+    <section class="stats" id="stats" aria-label="At a glance"></section>
+
+    <section class="front" id="frontPage" aria-labelledby="frontTitle">
+      <h2 class="sr-only" id="frontTitle">Top stories</h2>
+      <article class="lead" id="lead" hidden></article>
+      <div class="panel top-list glass" id="topStories" hidden></div>
+    </section>
+
+    <div class="columns">
+      <main id="main" tabindex="-1">
+        <div class="feed-head">
+          <h2 id="feedTitle">More findings</h2>
+          <p class="feed-status" id="filterStatus" role="status">Loading findings...</p>
+        </div>
+
+        <div class="controls">
+          <div class="controls-row">
+            <div class="tabs" role="group" aria-label="Quick views">
+              <button class="tab" type="button" data-view="all" aria-pressed="true">All</button>
+              <button class="tab" type="button" data-view="high" aria-pressed="false">High priority</button>
+              <button class="tab" type="button" data-view="latest" aria-pressed="false">Latest run</button>
+              <button class="tab" type="button" data-view="frontier" aria-pressed="false">Frontier</button>
+              <button class="tab" type="button" data-view="local" aria-pressed="false">Runs locally</button>
+            </div>
+          </div>
+          <div class="controls-row">
+            <label class="search">
+              <span class="sr-only">Search headlines and summaries</span>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="4.6"/><path d="m10.6 10.6 3.4 3.4"/></svg>
+              <input id="searchFilter" type="search" placeholder="Search headlines and summaries" autocomplete="off" />
+            </label>
+            <div class="toggles">
+              <div class="toggle-group" role="group" aria-label="Sort order">
+                <button type="button" data-sort="top" aria-pressed="true">Top</button>
+                <button type="button" data-sort="newest" aria-pressed="false">Newest</button>
+              </div>
+              <div class="toggle-group" role="group" aria-label="Layout">
+                <button type="button" data-layout="cards" aria-pressed="true">Cards</button>
+                <button type="button" data-layout="list" aria-pressed="false">List</button>
+              </div>
+            </div>
+          </div>
+          <details class="more-filters" id="moreFilters">
+            <summary>More filters</summary>
+            <div class="filter-grid">
+              <div class="field">
+                <label for="priorityFilter">Priority</label>
+                <select id="priorityFilter">
+                  <option value="">All priorities</option>
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Low">Low</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="deviceFilter">Device or barrier</label>
+                <select id="deviceFilter">
+                  <option value="">All access types</option>
+                  <option value="Phone">Phone</option>
+                  <option value="Laptop">Laptop</option>
+                  <option value="Both">Both</option>
+                  <option value="No-code">No-code</option>
+                  <option value="Low-code">Low-code</option>
+                  <option value="Code">Code</option>
+                  <option value="Runs locally">Runs locally</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="repeatFilter">Repeat coverage</label>
+                <select id="repeatFilter">
+                  <option value="">All findings</option>
+                  <option value="repeat">Seen more than once</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="runFilter">Scan</label>
+                <select id="runFilter"><option value="">All scans</option></select>
+              </div>
+            </div>
+            <div class="clear-row"><button class="btn" id="clearFilters" type="button">Clear all filters</button></div>
+          </details>
+        </div>
+
+        <div class="feed" id="findingsGrid"></div>
+      </main>
+
+      <aside class="rail" aria-label="Scan memo, watchlist, tools, and sources">
+        <section class="panel glass" aria-labelledby="memoTitle">
+          <h2 class="panel-title" id="memoTitle">Scan memo</h2>
+          <div id="memo" style="display:grid;gap:12px"></div>
+        </section>
+        <section class="panel glass" id="watchlist" aria-labelledby="watchTitle">
+          <h2 class="panel-title" id="watchTitle">Watchlist</h2>
+          <ul class="rail-list" id="watchGrid"></ul>
+          <button class="btn show-more" id="watchMore" type="button" hidden></button>
+        </section>
+        <section class="panel glass" aria-labelledby="toolsTitle">
+          <h2 class="panel-title" id="toolsTitle">Foundational tools</h2>
+          <ul class="rail-list" id="toolsGrid"></ul>
+        </section>
+        <section class="panel glass" aria-labelledby="sourcesTitle">
+          <h2 class="panel-title" id="sourcesTitle">Source health</h2>
+          <details class="sources" id="sourcesPanel">
+            <summary id="sourcesSummary">No sources checked yet</summary>
+            <ul class="rail-list" id="sourceGrid"></ul>
+          </details>
+          <a class="text-link" id="runScanLink" target="_blank" rel="noopener noreferrer" hidden>Run a scan now (repo owner only)</a>
+        </section>
+      </aside>
+    </div>
+
+    <footer class="footer">Scanned on a schedule by GitHub Actions and published as a static site. Nothing runs on or is saved to your device. Rankings come from keyword rules, not an editor, so check the source before acting. Tier 1 is a company's own channel, Tier 2 a vendor blog, and Tier 3 a community source anyone can post to.</footer>
+  </div>
+
+  <script>
+    // Relative, because GitHub Pages serves this from /<repo>/, not from the root of the site.
+    const FRANKY_CONFIG = { dataUrl: "data.json" };
+    const SCAN_EVERY_HOURS = 6;
+    const STALE_AFTER_HOURS = SCAN_EVERY_HOURS * 3;
+    const CHECK_EVERY_MS = 5 * 60 * 1000;
+
+    const TICKER_ITEMS = 20;
+    const TICKER_SPEED_PX_PER_SECOND = 55;
+    const TOP_STORIES = 4;
+    const WATCH_PREVIEW = 6;
+    const PRIORITY_RANK = { High: 0, Medium: 1, Low: 2 };
+    const WATCH_RANK = { "Frontier Watch": 0, Momentum: 1, "Confirmation Gap": 2 };
+    const FLAG_LABELS = { publish_date_unknown: "Publish date unknown", speculative: "Speculative", corporate_news: "Corporate news" };
+
+    const SOURCE_STATES = {
+      ok: { label: "Read fine", tone: "good" },
+      not_modified: { label: "Unchanged", tone: "good" },
+      error: { label: "Failed", tone: "bad" },
+      empty: { label: "Nothing readable", tone: "bad" },
+      robots_blocked: { label: "Blocked by robots.txt", tone: "bad" },
+      circuit_open: { label: "Paused after failures", tone: "warn" },
+      offline: { label: "Offline", tone: "warn" }
+    };
+
+    const ICON_OUT = `<svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5 8.5 3.5M4 3.5h4.5V8"/></svg>`;
+
+    const state = {
+      findings: [],
+      summaries: [],
+      watchlist: [],
+      tools: [],
+      sources: [],
+      meta: {},
+      watchExpanded: false,
+      filters: { view: "all", runId: "", priority: "", access: "", repeat: "", search: "" },
+      sort: "top",
+      layout: "cards"
+    };
+
+    const byId = id => document.getElementById(id);
+    const els = {
+      ticker: byId("ticker"),
+      tickerViewport: byId("tickerViewport"),
+      tickerTrack: byId("tickerTrack"),
+      tickerToggle: byId("tickerToggle"),
+      stats: byId("stats"),
+      frontPage: byId("frontPage"),
+      lead: byId("lead"),
+      topStories: byId("topStories"),
+      feedTitle: byId("feedTitle"),
+      filterStatus: byId("filterStatus"),
+      findingsGrid: byId("findingsGrid"),
+      memo: byId("memo"),
+      watchGrid: byId("watchGrid"),
+      watchMore: byId("watchMore"),
+      toolsGrid: byId("toolsGrid"),
+      sourcesPanel: byId("sourcesPanel"),
+      sourcesSummary: byId("sourcesSummary"),
+      sourceGrid: byId("sourceGrid"),
+      runFilter: byId("runFilter"),
+      priorityFilter: byId("priorityFilter"),
+      deviceFilter: byId("deviceFilter"),
+      repeatFilter: byId("repeatFilter"),
+      searchFilter: byId("searchFilter"),
+      clearFilters: byId("clearFilters"),
+      scanStatus: byId("scanStatus"),
+      runScanLink: byId("runScanLink"),
+      notice: byId("notice"),
+      noticeText: byId("noticeText")
+    };
+
+    const prefersReducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // Everything shown comes from third-party feeds, so all of it is escaped on the way in.
+    function safeText(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function safeUrl(url) {
+      // Links come from third-party feeds, so anything like javascript: must never become an href.
+      try {
+        const parsed = new URL(String(url || ""));
+        return ["http:", "https:"].includes(parsed.protocol) ? parsed.href : "";
+      } catch {
+        return "";
+      }
+    }
+
+    function pick(obj, ...keys) {
+      for (const key of keys) {
+        // null too: an interrupted run has no finish time, and new Date(null) is 1970.
+        if (obj && Object.prototype.hasOwnProperty.call(obj, key) && obj[key] !== "" && obj[key] != null) {
+          return obj[key];
+        }
+      }
+      return "";
+    }
+
+    function normalizeFindings(rows) {
+      return rows.map(item => ({
+        id: pick(item, "finding_id"),
+        date: pick(item, "date"),
+        runId: pick(item, "run_id"),
+        headline: pick(item, "headline"),
+        category: pick(item, "category"),
+        company: pick(item, "tool_or_company"),
+        summary: pick(item, "summary"),
+        atHomeUse: pick(item, "at_home_use"),
+        sourceName: pick(item, "source_name"),
+        sourceTier: pick(item, "source_tier"),
+        sourceUrl: pick(item, "source_url"),
+        access: pick(item, "device_access_technical_barrier"),
+        priority: pick(item, "priority"),
+        score: Number(pick(item, "score")) || 0,
+        repeat: pick(item, "repeat_relevance_marker"),
+        status: pick(item, "status"),
+        notes: pick(item, "notes")
+      }));
+    }
+
+    function normalizeSummaries(rows) {
+      return rows.map(item => ({
+        runId: pick(item, "run_id"),
+        runDate: pick(item, "run_date"),
+        finishedAt: pick(item, "finished_at"),
+        range: pick(item, "time_range"),
+        summary: pick(item, "summary"),
+        topTakeaway: pick(item, "top_takeaway"),
+        findingsCount: pick(item, "num_findings"),
+        updatedCount: pick(item, "num_updated"),
+        watchCount: pick(item, "num_watchlist_items"),
+        status: pick(item, "status"),
+        link: pick(item, "link_to_report")
+      }));
+    }
+
+    function normalizeWatchlist(rows) {
+      return rows.map(item => ({
+        id: pick(item, "watch_id"),
+        runId: pick(item, "run_id"),
+        dateAdded: pick(item, "date_added"),
+        item: pick(item, "item_trend"),
+        category: pick(item, "category"),
+        why: pick(item, "why_watched"),
+        needs: pick(item, "what_needs_confirmation"),
+        sourceLead: pick(item, "source_lead"),
+        sourceUrl: pick(item, "source_url"),
+        priority: pick(item, "priority"),
+        status: pick(item, "status"),
+        lastReviewed: pick(item, "last_reviewed")
+      }));
+    }
+
+    function normalizeTools(rows) {
+      return rows.map(item => ({
+        id: pick(item, "tool_id"),
+        name: pick(item, "tool_name"),
+        category: pick(item, "category"),
+        useCase: pick(item, "core_use_case"),
+        access: pick(item, "accessibility")
+      }));
+    }
+
+    async function loadFrankyData() {
+      // GitHub Pages caches for a few minutes, and the query string asks for a fresh copy.
+      const response = await fetch(`${FRANKY_CONFIG.dataUrl}?t=${Date.now()}`, { cache: "no-store" });
+      if (!response.ok) throw new Error(`Data feed returned ${response.status}`);
+      const payload = await response.json();
+      return {
+        findings: normalizeFindings(payload.findings || []),
+        summaries: normalizeSummaries(payload.summaries || []),
+        watchlist: normalizeWatchlist(payload.watchlist || []),
+        tools: normalizeTools(payload.foundationalTools || []),
+        sources: payload.sources || [],
+        meta: {
+          generatedAt: pick(payload, "generated_at"),
+          repository: pick(payload, "repository")
+        }
+      };
+    }
+
+    /* ---------- Dates ---------- */
+
+    // Dates arrive as YYYY-MM-DD. new Date() would read that as UTC midnight, which shows as
+    // the previous day anywhere west of Greenwich, so build it as a local date instead.
+    function parseDay(value) {
+      const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value || ""));
+      return match ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])) : null;
+    }
+
+    function daysAgo(value) {
+      const day = parseDay(value);
+      if (!day) return null;
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      return Math.round((today - day) / 86400000);
+    }
+
+    function shortDay(value) {
+      const day = parseDay(value);
+      return day ? day.toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "";
+    }
+
+    function relativeDay(value) {
+      const days = daysAgo(value);
+      if (days === null) return "";
+      // Feeds use UTC, so an evening article can be dated tomorrow.
+      if (days <= 0) return "Today";
+      if (days === 1) return "Yesterday";
+      if (days < 7) return `${days} days ago`;
+      return shortDay(value);
+    }
+
+    function timeTag(value) {
+      const label = relativeDay(value);
+      return label ? `<time datetime="${safeText(value)}" title="${safeText(value)}">${safeText(label)}</time>` : "";
+    }
+
+    function clockLabel(value) {
+      const when = new Date(value);
+      if (!value || Number.isNaN(when.getTime())) return "";
+      const now = new Date();
+      const sameDay = when.toDateString() === now.toDateString();
+      const time = when.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+      return sameDay ? time : `${when.toLocaleDateString(undefined, { month: "short", day: "numeric" })}, ${time}`;
+    }
+
+    /* ---------- Sorting and filtering ---------- */
+
+    const priorityRank = item => PRIORITY_RANK[item.priority] ?? 3;
+    const dayValue = item => parseDay(item.date)?.getTime() ?? 0;
+
+    function byTop(a, b) {
+      return priorityRank(a) - priorityRank(b) || dayValue(b) - dayValue(a) || b.score - a.score;
+    }
+
+    function byNewest(a, b) {
+      return dayValue(b) - dayValue(a) || priorityRank(a) - priorityRank(b) || b.score - a.score;
+    }
+
+    function priorityClass(priority) {
+      return { High: "is-high", Medium: "is-medium", Low: "is-low" }[priority] || "is-unrated";
+    }
+
+    const accessParts = item => String(item.access || "").split("|").map(part => part.trim()).filter(Boolean);
+
+    function getLatestRunId() {
+      // The newest run that found something. Most scans find nothing new, and a quiet scan
+      // shouldn't blank the memo. The masthead reports the true last scan.
+      const hasNews = item => Number(item.findingsCount) || Number(item.updatedCount) || Number(item.watchCount);
+      const runIds = [...new Set([
+        ...state.summaries.filter(hasNews).map(item => item.runId).filter(Boolean),
+        ...state.findings.map(item => item.runId).filter(Boolean),
+        ...state.watchlist.map(item => item.runId).filter(Boolean)
+      ])];
+      return runIds.sort().at(-1) || state.summaries[0]?.runId || "";
+    }
+
+    function isFrontier(item) {
+      const inWatch = state.watchlist.some(watch => {
+        if (!/frontier/i.test(watch.category || "")) return false;
+        const token = String(watch.item || "").toLowerCase().slice(0, 14);
+        return token && String(item.headline || "").toLowerCase().includes(token);
+      });
+      return inWatch || /frontier/i.test(item.summary || "");
+    }
+
+    function matchesFilters(item, latestRunId) {
+      const { view, runId, priority, access, repeat, search } = state.filters;
+      const parts = accessParts(item).map(part => part.toLowerCase());
+      if (view === "high" && item.priority !== "High") return false;
+      if (view === "latest" && item.runId !== latestRunId) return false;
+      if (view === "frontier" && !isFrontier(item)) return false;
+      if (view === "local" && !parts.includes("runs locally")) return false;
+      if (runId && item.runId !== runId) return false;
+      if (priority && item.priority !== priority) return false;
+      if (repeat === "repeat" && !item.repeat) return false;
+      if (access) {
+        // Whole values only: "Code" must not match "No-code" or "Low-code".
+        const wanted = access.toLowerCase();
+        // "Both" means phone and laptop, so it belongs under either one.
+        const alsoBoth = ["laptop", "phone"].includes(wanted) && parts.includes("both");
+        if (!parts.includes(wanted) && !alsoBoth) return false;
+      }
+      if (search) {
+        const hay = `${item.headline} ${item.summary} ${item.company} ${item.category}`.toLowerCase();
+        if (!hay.includes(search.toLowerCase())) return false;
+      }
+      return true;
+    }
+
+    const isFiltering = () => {
+      const { view, runId, priority, access, repeat, search } = state.filters;
+      return view !== "all" || Boolean(runId || priority || access || repeat || search);
+    };
+
+    /* ---------- Headline banner ---------- */
+
+    function tickerItem(item) {
+      const url = safeUrl(item.sourceUrl);
+      const body = `
+        <span class="ticker-source">${safeText(item.company || item.sourceName)}</span>
+        <span class="ticker-priority ${priorityClass(item.priority)}">${safeText(String(item.priority || "Unrated").toUpperCase())}</span>
+        <span class="ticker-headline">${safeText(item.headline)}</span>
+        <span class="ticker-when">${safeText(shortDay(item.date))}</span>`;
+      return `<li class="ticker-item">${url
+        ? `<a class="ticker-link" href="${safeText(url)}" target="_blank" rel="noopener noreferrer">${body}</a>`
+        : `<span class="ticker-link">${body}</span>`}</li>`;
+    }
+
+    let tickerSignature = null;
+
+    function renderTicker() {
+      const items = [...state.findings].sort(byNewest).slice(0, TICKER_ITEMS);
+      const signature = items.map(item => `${item.id}|${item.headline}|${item.priority}`).join("\n");
+      // Only rebuild when the headlines change, so a refresh doesn't make the banner jump.
+      if (signature === tickerSignature) return;
+      tickerSignature = signature;
+      els.ticker.classList.toggle("is-empty", !items.length);
+      if (!items.length) {
+        els.tickerTrack.innerHTML = `<p class="ticker-empty">No headlines yet. The first scan hasn't finished.</p>`;
+        return;
+      }
+      els.tickerTrack.innerHTML = `<ul class="ticker-group">${items.map(tickerItem).join("")}</ul>`;
+      layoutTicker();
+    }
+
+    // The banner loops by showing copies of the list and sliding exactly one list-width.
+    function layoutTicker() {
+      const first = els.tickerTrack.querySelector(".ticker-group");
+      if (!first) return;
+      els.tickerTrack.querySelectorAll(".ticker-group[aria-hidden]").forEach(copy => copy.remove());
+      if (prefersReducedMotion()) return;
+      const width = first.getBoundingClientRect().width;
+      if (!width) return;
+      const copies = Math.max(1, Math.ceil(els.tickerViewport.clientWidth / width));
+      for (let index = 0; index < copies; index += 1) {
+        const copy = first.cloneNode(true);
+        // Screen readers and the Tab key get each headline once. Copies still work with a mouse.
+        copy.setAttribute("aria-hidden", "true");
+        copy.querySelectorAll("a").forEach(link => { link.tabIndex = -1; });
+        els.tickerTrack.appendChild(copy);
+      }
+      els.tickerTrack.style.setProperty("--ticker-shift", `${width}px`);
+      els.tickerTrack.style.setProperty("--ticker-duration", `${Math.max(20, width / TICKER_SPEED_PX_PER_SECOND)}s`);
+    }
+
+    function setTickerPaused(paused) {
+      els.ticker.classList.toggle("is-paused", paused);
+      const label = paused ? "Play headlines" : "Pause headlines";
+      els.tickerToggle.setAttribute("aria-label", label);
+      els.tickerToggle.title = label;
+    }
+
+    function bindTicker() {
+      els.tickerToggle.addEventListener("click", () => setTickerPaused(!els.ticker.classList.contains("is-paused")));
+      // Keyboard focus only. A mouse click also focuses a link, and the banner shouldn't jump for that.
+      els.tickerViewport.addEventListener("focusin", event => {
+        if (event.target.matches(":focus-visible")) els.ticker.classList.add("is-manual");
+      });
+      els.tickerViewport.addEventListener("focusout", event => {
+        if (els.tickerViewport.contains(event.relatedTarget)) return;
+        els.ticker.classList.remove("is-manual");
+        els.tickerViewport.scrollLeft = 0;
+      });
+      let resizeTimer = null;
+      let lastWidth = els.tickerViewport.clientWidth;
+      window.addEventListener("resize", () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          if (els.tickerViewport.clientWidth === lastWidth) return;
+          lastWidth = els.tickerViewport.clientWidth;
+          layoutTicker();
+        }, 200);
+      });
+    }
+
+    /* ---------- Page sections ---------- */
+
+    function metaLine(item) {
+      const source = [item.sourceName || item.company, item.sourceTier].filter(Boolean).join(", ");
+      return `<div class="meta"><span class="meta-source">${safeText(source || "Source not set")}</span>${timeTag(item.date) ? `<span>${timeTag(item.date)}</span>` : ""}</div>`;
+    }
+
+    function storyTitle(item) {
+      const url = safeUrl(item.sourceUrl);
+      return url
+        ? `<a class="story-link" href="${safeText(url)}" target="_blank" rel="noopener noreferrer">${safeText(item.headline)}</a>`
+        : safeText(item.headline);
+    }
+
+    function chips(item) {
+      const parts = accessParts(item).map(part =>
+        `<span class="chip ${part === "Runs locally" ? "is-local" : ""}">${safeText(part)}</span>`).join("");
+      const repeat = item.repeat ? `<span class="chip">Seen ${safeText(String(item.repeat).replace("R", ""))}x</span>` : "";
+      const updated = item.status === "Updated" ? `<span class="chip">Updated</span>` : "";
+      return `<div class="chips"><span class="chip ${priorityClass(item.priority)}">${safeText(item.priority || "Unrated")}</span>${updated}${parts}${repeat}</div>`;
+    }
+
+    function friendlyNotes(notes) {
+      return String(notes || "").replace(/^Flags: ([^.]*)/, (_all, flags) =>
+        flags.split(", ").map(flag => FLAG_LABELS[flag] || flag).join(", "));
+    }
+
+    function renderStats(latestRunId) {
+      const latest = state.findings.filter(item => item.runId === latestRunId).length;
+      const high = state.findings.filter(item => item.priority === "High").length;
+      const local = state.findings.filter(item => accessParts(item).includes("Runs locally")).length;
+      const tiles = [
+        { label: "High priority", value: high, view: "high" },
+        { label: "New in latest run", value: latest, view: "latest" },
+        { label: "Runs locally", value: local, view: "local" },
+        { label: "On the watchlist", value: state.watchlist.length, jump: "watchlist" }
+      ];
+      els.stats.innerHTML = tiles.map(tile => `
+        <button class="stat" type="button" ${tile.view ? `data-view="${tile.view}" aria-pressed="${state.filters.view === tile.view}"` : `data-jump="${tile.jump}"`}>
+          <span class="stat-label">${safeText(tile.label)}</span>
+          <span class="stat-value">${safeText(tile.value)}</span>
+        </button>`).join("");
+    }
+
+    function frontStories() {
+      return [...state.findings].sort(byTop).slice(0, 1 + TOP_STORIES);
+    }
+
+    function renderFront() {
+      const stories = isFiltering() ? [] : frontStories();
+      els.frontPage.hidden = !stories.length;
+      const [lead, ...rest] = stories;
+      els.lead.hidden = !lead;
+      if (lead) {
+        const note = friendlyNotes(lead.notes);
+        els.lead.innerHTML = `
+          <p class="kicker">Top story, ${safeText(String(lead.priority || "unrated").toLowerCase())} priority</p>
+          <h3>${storyTitle(lead)}</h3>
+          ${lead.summary ? `<p class="lead-summary">${safeText(lead.summary)}</p>` : ""}
+          ${lead.atHomeUse ? `<p class="use"><b>At home:</b> ${safeText(lead.atHomeUse)}</p>` : ""}
+          ${note ? `<p class="card-note">${safeText(note)}</p>` : ""}
+          ${metaLine(lead)}
+          ${chips(lead)}`;
+      }
+      els.topStories.hidden = !rest.length;
+      els.topStories.innerHTML = rest.length ? `
+        <p class="panel-title">Also important</p>
+        <ol>${rest.map((item, index) => `
+          <li class="top-item">
+            <span class="top-rank" aria-hidden="true">${String(index + 2).padStart(2, "0")}</span>
+            <h3>${storyTitle(item)}</h3>
+            ${metaLine(item)}
+          </li>`).join("")}</ol>` : "";
+      els.frontPage.style.gridTemplateColumns = rest.length ? "" : "minmax(0, 1fr)";
+    }
+
+    function cardHtml(item) {
+      const note = friendlyNotes(item.notes);
+      return `
+        <article class="card">
+          ${metaLine(item)}
+          <h4>${storyTitle(item)}</h4>
+          ${item.summary ? `<p class="card-summary">${safeText(item.summary)}</p>` : ""}
+          ${item.atHomeUse ? `<p class="use"><b>At home:</b> ${safeText(item.atHomeUse)}</p>` : ""}
+          ${note ? `<p class="card-note">${safeText(note)}</p>` : ""}
+          ${chips(item)}
+        </article>`;
+    }
+
+    function groupFindings(items) {
+      const groups = new Map();
+      const add = (name, item) => {
+        if (!groups.has(name)) groups.set(name, []);
+        groups.get(name).push(item);
+      };
+      items.forEach(item => {
+        if (state.sort === "top") {
+          add(item.priority ? `${item.priority} priority` : "Unrated", item);
+          return;
+        }
+        const days = daysAgo(item.date);
+        if (days === null) add("Date unknown", item);
+        else if (days <= 0) add("Today", item);
+        else if (days === 1) add("Yesterday", item);
+        else if (days < 7) add("This week", item);
+        else if (days < 30) add("This month", item);
+        else add("Earlier", item);
+      });
+      return groups;
+    }
+
+    function renderFeed() {
+      const filtering = isFiltering();
+      const latestRunId = getLatestRunId();
+      const sorter = state.sort === "newest" ? byNewest : byTop;
+      const matches = state.findings.filter(item => matchesFilters(item, latestRunId)).sort(sorter);
+      const shownUp = filtering ? new Set() : new Set(frontStories().map(item => item.id));
+      const items = matches.filter(item => !shownUp.has(item.id));
+      const total = state.findings.length;
+
+      els.feedTitle.textContent = filtering ? "Results" : "More findings";
+      els.findingsGrid.classList.toggle("is-list", state.layout === "list");
+      els.filterStatus.textContent = filtering
+        ? `Showing ${matches.length} of ${total} finding${total === 1 ? "" : "s"}.`
+        : `${items.length} more, ${total} finding${total === 1 ? "" : "s"} in all.`;
+
+      if (!total) {
+        els.filterStatus.textContent = "";
+        els.findingsGrid.innerHTML = `<div class="empty"><b>No findings yet</b>The first scan hasn't finished. Scans run on GitHub every few hours.</div>`;
+        return;
+      }
+      if (!items.length) {
+        els.findingsGrid.innerHTML = filtering
+          ? `<div class="empty"><b>Nothing matches these filters</b>Try fewer filters, or clear them to see everything.</div>`
+          : `<div class="empty"><b>That's everything</b>All findings are in the top stories above.</div>`;
+        return;
+      }
+      els.findingsGrid.innerHTML = [...groupFindings(items)].map(([name, group]) => `
+        <section>
+          <h3 class="group-title">${safeText(name)} (${group.length})</h3>
+          <div class="cards">${group.map(cardHtml).join("")}</div>
+        </section>`).join("");
+    }
+
+    function renderControls() {
+      document.querySelectorAll("[data-view]").forEach(button => {
+        button.setAttribute("aria-pressed", String(button.dataset.view === state.filters.view));
+      });
+      document.querySelectorAll("[data-sort]").forEach(button => {
+        button.setAttribute("aria-pressed", String(button.dataset.sort === state.sort));
+      });
+      document.querySelectorAll("[data-layout]").forEach(button => {
+        button.setAttribute("aria-pressed", String(button.dataset.layout === state.layout));
+      });
+    }
+
+    function populateRunFilter() {
+      const runIds = [...new Set(state.findings.map(item => item.runId).filter(Boolean))].sort().reverse();
+      const current = state.filters.runId;
+      const label = id => {
+        const run = state.summaries.find(summary => summary.runId === id);
+        return run ? `${shortDay(run.runDate) || id} (${id})` : id;
+      };
+      els.runFilter.innerHTML = `<option value="">All scans</option>${runIds.map(id => `<option value="${safeText(id)}">${safeText(label(id))}</option>`).join("")}`;
+      els.runFilter.value = runIds.includes(current) ? current : "";
+      state.filters.runId = els.runFilter.value;
+    }
+
+    function renderMemo(latestRunId) {
+      const run = state.summaries.find(item => item.runId === latestRunId);
+      if (!run) {
+        els.memo.innerHTML = `<p class="memo-text">No scans yet. The memo appears after the first scan.</p>`;
+        return;
+      }
+      const reportUrl = String(run.link || "");
+      els.memo.innerHTML = `
+        <p class="memo-takeaway">${safeText(run.topTakeaway || "No takeaway recorded.")}</p>
+        ${run.summary ? `<p class="memo-text">${safeText(run.summary)}</p>` : ""}
+        <dl class="memo-facts">
+          <dt>Scanned</dt><dd>${safeText(shortDay(run.runDate) || run.runDate)}</dd>
+          <dt>Covers</dt><dd>${safeText(run.range || "Not recorded")}</dd>
+          <dt>Found</dt><dd>${safeText(Number(run.findingsCount) || 0)} findings, ${safeText(Number(run.watchCount) || 0)} watched</dd>
+        </dl>
+        ${reportUrl.startsWith("reports/") ? `<a class="text-link" href="${safeText(reportUrl)}" target="_blank" rel="noopener noreferrer">Open full report ${ICON_OUT}</a>` : ""}`;
+    }
+
+    function renderWatchlist() {
+      const items = [...state.watchlist].sort((a, b) =>
+        (WATCH_RANK[a.category] ?? 9) - (WATCH_RANK[b.category] ?? 9) ||
+        String(b.dateAdded).localeCompare(String(a.dateAdded)));
+      if (!items.length) {
+        els.watchGrid.innerHTML = `<li class="memo-text">Nothing on the watchlist yet.</li>`;
+        els.watchMore.hidden = true;
+        return;
+      }
+      const shown = state.watchExpanded ? items : items.slice(0, WATCH_PREVIEW);
+      els.watchGrid.innerHTML = shown.map(item => {
+        const url = safeUrl(item.sourceUrl);
+        const lead = safeText(item.sourceLead || "Source");
+        const frontier = /frontier/i.test(item.category || "");
+        return `
+          <li class="watch-item">
+            <details>
+              <summary>
+                <span class="chip is-category ${frontier ? "is-frontier" : ""}">${safeText(item.category || "Watch")}</span>
+                <span class="watch-title">${safeText(item.item)}</span>
+              </summary>
+              <div class="watch-body">
+                ${item.why ? `<p>${safeText(item.why)}</p>` : ""}
+                ${item.needs ? `<p><b>Needs confirmation:</b> ${safeText(item.needs)}</p>` : ""}
+                ${url ? `<a class="text-link" href="${safeText(url)}" target="_blank" rel="noopener noreferrer">${lead} ${ICON_OUT}</a>` : `<p>${lead}</p>`}
+              </div>
+            </details>
+          </li>`;
+      }).join("");
+      els.watchMore.hidden = items.length <= WATCH_PREVIEW;
+      els.watchMore.textContent = state.watchExpanded ? "Show fewer" : `Show all ${items.length}`;
+    }
+
+    function renderTools() {
+      els.toolsGrid.innerHTML = state.tools.length
+        ? state.tools.map(tool => `
+          <li>
+            <p class="tool-name">${safeText(tool.name)}</p>
+            ${tool.useCase ? `<p class="tool-use">${safeText(tool.useCase)}</p>` : ""}
+            ${tool.access ? `<p class="tool-access">${safeText(tool.access)}</p>` : ""}
+          </li>`).join("")
+        : `<li class="memo-text">No tools on the shelf yet.</li>`;
+    }
+
+    function renderSources() {
+      if (!state.sources.length) {
+        els.sourcesSummary.textContent = "No sources checked yet";
+        els.sourceGrid.innerHTML = "";
+        return;
+      }
+      const infoFor = source => SOURCE_STATES[source.status] || { label: source.status || "Not checked", tone: "warn" };
+      const healthy = state.sources.filter(source => infoFor(source).tone === "good").length;
+      const allGood = healthy === state.sources.length;
+      els.sourcesSummary.textContent = `${healthy} of ${state.sources.length} sources read fine`;
+      // A problem is never tucked away behind a collapsed panel.
+      if (!allGood) els.sourcesPanel.open = true;
+      els.sourceGrid.innerHTML = state.sources.map(source => {
+        const info = infoFor(source);
+        const checked = source.last_checked ? clockLabel(source.last_checked) : "Never";
+        return `
+          <li class="tone-${info.tone}">
+            <p class="source-name"><span class="dot" aria-hidden="true"></span>${safeText(source.name)}</p>
+            <p class="source-state">${safeText(info.label)}, checked ${safeText(checked)}</p>
+            ${source.detail ? `<p class="source-state">${safeText(source.detail)}</p>` : ""}
+          </li>`;
+      }).join("");
+    }
+
+    function renderFilteredViews() {
+      renderControls();
+      renderFront();
+      renderFeed();
+    }
+
+    function renderAll() {
+      const latestRunId = getLatestRunId();
+      populateRunFilter();
+      renderTicker();
+      renderStats(latestRunId);
+      renderFilteredViews();
+      renderMemo(latestRunId);
+      renderWatchlist();
+      renderTools();
+      renderSources();
+    }
+
+    function applyData(data) {
+      state.findings = data.findings;
+      state.summaries = data.summaries;
+      state.watchlist = data.watchlist;
+      state.tools = data.tools;
+      state.sources = data.sources;
+      state.meta = data.meta;
+      renderAll();
+    }
+
+    /* ---------- Updates ---------- */
+
+    function showNotice(message) {
+      els.notice.hidden = !message;
+      els.noticeText.textContent = message || "";
+    }
+
+    function describeLastScan() {
+      const latest = state.summaries[0];
+      if (!latest) return "No scans yet";
+      const when = clockLabel(state.meta.generatedAt || latest.finishedAt) || latest.runDate;
+      if (latest.status === "offline") return `Scan was <strong>offline</strong> at ${safeText(when)}`;
+      if (latest.status === "interrupted") return `Last scan was <strong>interrupted</strong>`;
+      const found = Number(latest.findingsCount) || 0;
+      const updated = Number(latest.updatedCount) || 0;
+      const news = found ? `${found} new` : updated ? `${updated} updated` : "nothing new";
+      return `Updated <strong>${safeText(when)}</strong>, ${safeText(news)}`;
+    }
+
+    // A cloud schedule can stop without anyone noticing, so the page itself says when it's old.
+    function staleNotice() {
+      const generated = new Date(state.meta.generatedAt);
+      if (!state.meta.generatedAt || Number.isNaN(generated.getTime())) return "";
+      const hours = (Date.now() - generated.getTime()) / 3600000;
+      if (hours <= STALE_AFTER_HOURS) return "";
+      const age = hours < 48 ? `${Math.round(hours)} hours` : `${Math.round(hours / 24)} days`;
+      return `This page was last updated ${age} ago, but scans normally run every ${SCAN_EVERY_HOURS} hours. The schedule may be delayed or paused.`;
+    }
+
+    function showStatus() {
+      els.scanStatus.innerHTML = describeLastScan();
+      showNotice(staleNotice());
+      const repository = /^[\w.-]+\/[\w.-]+$/.test(state.meta.repository || "") ? state.meta.repository : "";
+      els.runScanLink.hidden = !repository;
+      if (repository) els.runScanLink.href = `https://github.com/${repository}/actions/workflows/scan.yml`;
+    }
+
+    // Scans happen on GitHub, so an open page has to look for new data. Comparing the time the
+    // data was generated also catches a tab that was asleep when the scan finished.
+    async function checkForUpdates() {
+      try {
+        const data = await loadFrankyData();
+        if (data.meta.generatedAt !== state.meta.generatedAt) applyData(data);
+        showStatus();
+      } catch (error) {
+        showNotice(`Couldn't check for new data (${error.message}). Showing what was last loaded. This page tries again on its own.`);
+      }
+    }
+
+    /* ---------- Controls ---------- */
+
+    function scrollToFeed() {
+      byId("main").scrollIntoView({ block: "start", behavior: prefersReducedMotion() ? "auto" : "smooth" });
+    }
+
+    function setView(view) {
+      // Pressing the active view again turns it off.
+      state.filters.view = state.filters.view === view ? "all" : view;
+      renderFilteredViews();
+      renderStats(getLatestRunId());
+    }
+
+    function clearFilters() {
+      state.filters = { view: "all", runId: "", priority: "", access: "", repeat: "", search: "" };
+      els.runFilter.value = "";
+      els.priorityFilter.value = "";
+      els.deviceFilter.value = "";
+      els.repeatFilter.value = "";
+      els.searchFilter.value = "";
+      renderFilteredViews();
+      renderStats(getLatestRunId());
+    }
+
+    function bindEvents() {
+      document.addEventListener("click", event => {
+        const target = event.target.closest("button");
+        if (!target) return;
+        if (target.dataset.view) {
+          setView(target.dataset.view);
+          scrollToFeed();
+        } else if (target.dataset.jump) {
+          byId(target.dataset.jump).scrollIntoView({ block: "start", behavior: prefersReducedMotion() ? "auto" : "smooth" });
+        } else if (target.dataset.sort) {
+          state.sort = target.dataset.sort;
+          renderFilteredViews();
+        } else if (target.dataset.layout) {
+          state.layout = target.dataset.layout;
+          renderFilteredViews();
+        }
+      });
+      [[els.runFilter, "runId"], [els.priorityFilter, "priority"], [els.deviceFilter, "access"], [els.repeatFilter, "repeat"]].forEach(([element, key]) => {
+        element.addEventListener("change", () => {
+          state.filters[key] = element.value;
+          renderFilteredViews();
+        });
+      });
+      els.searchFilter.addEventListener("input", () => {
+        state.filters.search = els.searchFilter.value.trim();
+        renderFilteredViews();
+      });
+      els.clearFilters.addEventListener("click", clearFilters);
+      els.watchMore.addEventListener("click", () => {
+        state.watchExpanded = !state.watchExpanded;
+        renderWatchlist();
+      });
+    }
+
+    async function init() {
+      try {
+        bindTicker();
+        bindEvents();
+        applyData(await loadFrankyData());
+        showStatus();
+        setInterval(checkForUpdates, CHECK_EVERY_MS);
+        // Browsers slow or pause timers in background tabs, so also check on coming back.
+        document.addEventListener("visibilitychange", () => {
+          if (!document.hidden) checkForUpdates();
+        });
+        window.addEventListener("focus", checkForUpdates);
+      } catch (error) {
+        console.error(error);
+        els.ticker.classList.add("is-empty");
+        els.tickerTrack.innerHTML = `<p class="ticker-empty">No data yet.</p>`;
+        els.scanStatus.textContent = "No data yet";
+        byId("page").innerHTML = `
+          <div class="empty">
+            <b>Franky Frontier couldn't load its data</b>
+            If this site was only just set up, the first scan may not have finished yet. Try again in a few minutes. (${safeText(error.message)})
+          </div>`;
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

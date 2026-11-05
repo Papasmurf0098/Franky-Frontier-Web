@@ -1,0 +1,75 @@
+name: Scan and publish
+
+on:
+  schedule:
+    # Every 6 hours, off the hour. GitHub says the start of the hour is when runs get delayed.
+    # Each source's own cadence still decides whether it's read on a given run.
+    - cron: "23 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Check every source, even ones not due or paused
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths:
+      - "config/**"
+      - "franky/**"
+      - "site/**"
+      - "tests/**"
+      - "ci/**"
+      - ".github/workflows/scan.yml"
+
+permissions:
+  contents: read
+
+# One at a time, because two runs at once would race to save the history.
+concurrency:
+  group: scan-and-publish
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write # To save history to the scan-state branch.
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # Actions are pinned to exact commits, so a moved tag can't change what runs here.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Run tests
+        # On code changes only. A scheduled scan shouldn't stop because of a flaky test.
+        if: github.event_name == 'push'
+        run: python3 -m unittest discover -s tests -t .
+
+      - name: Restore scan history
+        run: ci/state.sh restore .state
+
+      - name: Scan sources and build the site
+        env:
+          FORCE: ${{ inputs.force }}
+        run: |
+          if [ "$FORCE" = "true" ]; then
+            python3 -m franky run --state-dir .state --out dist --force
+          else
+            python3 -m franky run --state-dir .state --out dist
+          fi
+
+      - name: Save scan history
+        run: ci/state.sh save .state
+
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: dist
+
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

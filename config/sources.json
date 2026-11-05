@@ -1,0 +1,301 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "name": "OpenAI News",
+      "company": "OpenAI",
+      "url": "https://openai.com/news/rss.xml",
+      "kind": "feed",
+      "enabled": true,
+      "trust_tier": "Tier 1",
+      "category": "Model / Product Updates",
+      "cadence_hours": 12,
+      "max_items": 8,
+      "device_access": "Both",
+      "technical_barrier": "No-code",
+      "positive_keywords": [
+        "launch",
+        "release",
+        "adoption",
+        "api",
+        "workflow",
+        "agent"
+      ],
+      "negative_keywords": [
+        "careers",
+        "policy"
+      ]
+    },
+    {
+      "name": "Anthropic News",
+      "company": "Anthropic",
+      "url": "https://www.anthropic.com/news",
+      "kind": "page",
+      "enabled": true,
+      "trust_tier": "Tier 1",
+      "category": "Model / Product Updates",
+      "cadence_hours": 12,
+      "max_items": 8,
+      "article_path": "^/news/[^/]+/?$",
+      "article_path_exclude": "^/news/(announcements|features|partnerships|product|policy|research|societal-impacts)/?$",
+      "device_access": "Both",
+      "technical_barrier": "Low-code",
+      "positive_keywords": [
+        "developer",
+        "agent",
+        "workflow",
+        "api"
+      ],
+      "negative_keywords": [
+        "jobs",
+        "policy"
+      ]
+    },
+    {
+      "name": "Google AI Blog",
+      "company": "Google",
+      "url": "https://blog.google/innovation-and-ai/technology/ai/rss/",
+      "kind": "feed",
+      "enabled": true,
+      "trust_tier": "Tier 1",
+      "category": "AI Product / Platform Updates",
+      "cadence_hours": 24,
+      "max_items": 8,
+      "device_access": "Both",
+      "technical_barrier": "No-code",
+      "positive_keywords": [
+        "gemini",
+        "workspace",
+        "developer",
+        "agent"
+      ],
+      "negative_keywords": [
+        "careers"
+      ]
+    },
+    {
+      "name": "Hugging Face Blog",
+      "company": "Hugging Face",
+      "url": "https://huggingface.co/blog/feed.xml",
+      "kind": "feed",
+      "enabled": true,
+      "trust_tier": "Tier 2",
+      "category": "Model / Tool Launches",
+      "cadence_hours": 24,
+      "max_items": 8,
+      "boilerplate_description": "^(A Blog post by |We.re on a journey to advance)",
+      "device_access": "Laptop",
+      "technical_barrier": "Low-code",
+      "positive_keywords": [
+        "inference",
+        "spaces",
+        "workflow",
+        "open-source"
+      ],
+      "negative_keywords": [
+        "community",
+        "event"
+      ]
+    },
+    {
+      "name": "Replicate Blog",
+      "company": "Replicate",
+      "url": "https://replicate.com/blog/rss",
+      "kind": "feed",
+      "enabled": true,
+      "trust_tier": "Tier 2",
+      "category": "Model / Tool Launches",
+      "cadence_hours": 24,
+      "max_items": 8,
+      "device_access": "Both",
+      "technical_barrier": "Low-code",
+      "positive_keywords": [
+        "api",
+        "mcp",
+        "model",
+        "workflow",
+        "image",
+        "video"
+      ],
+      "negative_keywords": [
+        "jobs"
+      ]
+    },
+    {
+      "name": "Zapier Product News",
+      "company": "Zapier",
+      "url": "https://zapier.com/blog/categories/product-news/",
+      "kind": "page",
+      "enabled": true,
+      "trust_tier": "Tier 2",
+      "category": "Automation / Workflow Updates",
+      "cadence_hours": 24,
+      "max_items": 8,
+      "article_path": "^/blog/[^/]+/?$",
+      "article_path_exclude": "^/blog/(all-articles|categories|feeds)/?$",
+      "device_access": "Both",
+      "technical_barrier": "No-code",
+      "positive_keywords": [
+        "agent",
+        "automation",
+        "workflow",
+        "integration"
+      ],
+      "negative_keywords": [
+        "careers"
+      ]
+    },
+    {
+      "name": "Hacker News: AI",
+      "company": "Hacker News",
+      "url": "https://hn.algolia.com/api/v1/search_by_date?query=AI&tags=story&restrictSearchableAttributes=title&numericFilters=points%3E150,created_at_i%3E{epoch_days_ago:7}&hitsPerPage=20",
+      "kind": "api",
+      "adapter": "hacker_news",
+      "enabled": true,
+      "trust_tier": "Tier 3",
+      "category": "Community News",
+      "cadence_hours": 12,
+      "max_items": 8,
+      "device_access": "Both",
+      "technical_barrier": "Low-code",
+      "positive_keywords": [
+        "open-source",
+        "agent",
+        "workflow",
+        "local"
+      ],
+      "negative_keywords": [
+        "careers"
+      ],
+      "require_usable": true
+    },
+    {
+      "name": "Hacker News: Show HN",
+      "company": "Hacker News",
+      "url": "https://hn.algolia.com/api/v1/search_by_date?query=AI&tags=show_hn&restrictSearchableAttributes=title&numericFilters=points%3E30,created_at_i%3E{epoch_days_ago:14}&hitsPerPage=20",
+      "kind": "api",
+      "adapter": "hacker_news",
+      "enabled": true,
+      "trust_tier": "Tier 3",
+      "category": "Community Tools",
+      "cadence_hours": 12,
+      "max_items": 8,
+      "device_access": "Laptop",
+      "technical_barrier": "Low-code",
+      "positive_keywords": [
+        "open-source",
+        "agent",
+        "workflow",
+        "local"
+      ],
+      "negative_keywords": [
+        "careers"
+      ],
+      "caution": "Community project. Check it before you install anything"
+    },
+    {
+      "name": "GitHub: New local AI",
+      "company": "GitHub",
+      "url": "https://api.github.com/search/repositories?q=topic:llm+created:%3E{date_days_ago:30}+stars:%3E300&sort=stars&order=desc&per_page=20",
+      "kind": "api",
+      "adapter": "github_repositories",
+      "enabled": true,
+      "trust_tier": "Tier 3",
+      "category": "Community Tools",
+      "cadence_hours": 24,
+      "max_items": 6,
+      "device_access": "Laptop",
+      "technical_barrier": "Code",
+      "positive_keywords": [
+        "local",
+        "agent",
+        "workflow"
+      ],
+      "negative_keywords": [],
+      "caution": "Community project. Check it before you install anything"
+    },
+    {
+      "name": "Hugging Face: Trending GGUF",
+      "company": "Hugging Face",
+      "url": "https://huggingface.co/api/models?filter=gguf&sort=trendingScore&direction=-1&limit=20",
+      "kind": "api",
+      "adapter": "hugging_face_models",
+      "enabled": true,
+      "trust_tier": "Tier 3",
+      "category": "Local Models",
+      "cadence_hours": 24,
+      "max_items": 6,
+      "device_access": "Laptop",
+      "technical_barrier": "Low-code",
+      "positive_keywords": [
+        "gguf"
+      ],
+      "negative_keywords": [],
+      "caution": "Community upload. Check the license and model card first"
+    },
+    {
+      "name": "OpenRouter: Free models",
+      "company": "OpenRouter",
+      "url": "https://openrouter.ai/api/v1/models",
+      "kind": "api",
+      "adapter": "openrouter_free_models",
+      "enabled": true,
+      "trust_tier": "Tier 2",
+      "category": "Free Model Access",
+      "cadence_hours": 24,
+      "max_items": 6,
+      "device_access": "Both",
+      "technical_barrier": "Code",
+      "positive_keywords": [
+        "free"
+      ],
+      "negative_keywords": [],
+      "hosted_only": true
+    },
+    {
+      "name": "DEV: Top AI posts",
+      "company": "DEV",
+      "url": "https://dev.to/api/articles?tag=ai&top=7&per_page=20",
+      "kind": "api",
+      "adapter": "dev_articles",
+      "enabled": true,
+      "trust_tier": "Tier 3",
+      "category": "Community How-To",
+      "cadence_hours": 24,
+      "max_items": 5,
+      "device_access": "Both",
+      "technical_barrier": "Low-code",
+      "positive_keywords": [
+        "tutorial",
+        "guide",
+        "local",
+        "agent"
+      ],
+      "negative_keywords": [],
+      "require_usable": true,
+      "exclude_keywords": [
+        "hacktoberfest"
+      ]
+    },
+    {
+      "name": "Ollama Releases",
+      "company": "Ollama",
+      "url": "https://github.com/ollama/ollama/releases.atom",
+      "kind": "feed",
+      "enabled": true,
+      "trust_tier": "Tier 1",
+      "category": "Local Models",
+      "cadence_hours": 24,
+      "max_items": 3,
+      "read_articles": false,
+      "title_prefix": "Ollama ",
+      "device_access": "Laptop",
+      "technical_barrier": "Low-code",
+      "positive_keywords": [
+        "local"
+      ],
+      "negative_keywords": [],
+      "exclude_title_pattern": "-rc\\d*$"
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+# Built during the GitHub Actions run. Never committed to main.
+.state/
+dist/
+
+__pycache__/
+*.pyc
+.DS_Store
