@@ -5,7 +5,8 @@ untrusted, so a wrong type on one field costs that entry, not the whole source. 
 response with the wrong overall shape raises AdapterError, because that means the API
 changed, and source health needs to say so.
 
-An entry has: title, link, published (YYYY-MM-DD or ""), summary, signal (how much attention
+An entry has: title, link, published (YYYY-MM-DD or ""), published_at (a UTC timestamp or
+""), summary, signal (how much attention
 it has, in words), and strength (0 to 2, used as a small scoring bonus). These results can
 link anywhere on the web. The scanner only shows those links and never fetches them.
 """
@@ -16,7 +17,7 @@ import re
 from datetime import datetime, timezone
 from typing import Callable, Dict, List
 
-from .parsing import normalize_space, parse_date, strip_tags
+from .parsing import normalize_space, parse_date, parse_timestamp, strip_tags
 
 URL_IN_TEXT = re.compile(r"https?://\S+")
 
@@ -70,6 +71,7 @@ def hacker_news(data: object) -> List[Dict]:
                 # Ask HN and some Show HN posts have no outside link, only the discussion.
                 "link": _text(hit.get("url")).strip() or discussion,
                 "published": parse_date(_text(hit.get("created_at"))) or "",
+                "published_at": parse_timestamp(_text(hit.get("created_at"))),
                 "summary": normalize_space(URL_IN_TEXT.sub("", strip_tags(_text(hit.get("story_text"))))),
                 "signal": "%s and %s on Hacker News" % (_plural(points, "point"), _plural(comments, "comment")),
                 "strength": _strength(points, 300, 100),
@@ -93,6 +95,7 @@ def github_repositories(data: object) -> List[Dict]:
                 "title": name,
                 "link": link,
                 "published": parse_date(_text(repo.get("created_at"))) or "",
+                "published_at": parse_timestamp(_text(repo.get("created_at"))),
                 "summary": strip_tags(_text(repo.get("description"))),
                 "signal": "%s on GitHub%s" % (_plural(stars, "star"), ", written in %s" % language if language else ""),
                 "strength": _strength(stars, 2000, 500),
@@ -119,6 +122,7 @@ def hugging_face_models(data: object) -> List[Dict]:
                 "title": model_id,
                 "link": "https://huggingface.co/%s" % model_id,
                 "published": parse_date(_text(model.get("createdAt"))) or "",
+                "published_at": parse_timestamp(_text(model.get("createdAt"))),
                 "summary": summary,
                 "signal": "%s and %s on Hugging Face" % (_plural(likes, "like"), _plural(downloads, "download")),
                 "strength": _strength(likes, 300, 50),
@@ -179,9 +183,39 @@ def dev_articles(data: object) -> List[Dict]:
                 "title": title,
                 "link": link,
                 "published": parse_date(_text(article.get("published_timestamp"))) or "",
+                "published_at": parse_timestamp(_text(article.get("published_timestamp"))),
                 "summary": strip_tags(_text(article.get("description"))),
                 "signal": "%s and %s on DEV" % (_plural(reactions, "reaction"), _plural(comments, "comment")),
                 "strength": _strength(reactions, 150, 50),
+            }
+        )
+    return entries
+
+
+PAPER_ID = re.compile(r"^[\w.\-]{1,40}$")
+
+
+def hugging_face_papers(data: object) -> List[Dict]:
+    """https://huggingface.co/api/daily_papers: research papers the community picked that day."""
+    entries = []
+    for row in _rows(data):
+        paper = row.get("paper") if isinstance(row.get("paper"), dict) else {}
+        paper_id = _text(paper.get("id"))
+        title = normalize_space(strip_tags(_text(paper.get("title")) or _text(row.get("title"))))
+        if not title or not PAPER_ID.match(paper_id):
+            continue
+        upvotes, comments = _count(paper.get("upvotes")), _count(row.get("numComments"))
+        # The day it was featured, not the day it was written, because that is when it became news.
+        featured = _text(paper.get("submittedOnDailyAt")) or _text(row.get("publishedAt"))
+        entries.append(
+            {
+                "title": title,
+                "link": "https://huggingface.co/papers/%s" % paper_id,
+                "published": parse_date(featured) or "",
+                "published_at": parse_timestamp(featured),
+                "summary": strip_tags(_text(paper.get("summary")) or _text(row.get("summary"))),
+                "signal": "%s and %s on Hugging Face Papers" % (_plural(upvotes, "upvote"), _plural(comments, "comment")),
+                "strength": _strength(upvotes, 100, 30),
             }
         )
     return entries
@@ -191,6 +225,7 @@ ADAPTERS: Dict[str, Callable[[object], List[Dict]]] = {
     "hacker_news": hacker_news,
     "github_repositories": github_repositories,
     "hugging_face_models": hugging_face_models,
+    "hugging_face_papers": hugging_face_papers,
     "openrouter_free_models": openrouter_free_models,
     "dev_articles": dev_articles,
 }

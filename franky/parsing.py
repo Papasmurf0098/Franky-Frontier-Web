@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import re
 import xml.etree.ElementTree as ET
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from email.utils import parsedate_to_datetime
 from html import unescape
 from html.parser import HTMLParser
@@ -128,6 +128,33 @@ def parse_date(value: Optional[str]) -> Optional[str]:
     return parsed.isoformat()
 
 
+def parse_timestamp(value: Optional[str]) -> str:
+    """Return a UTC timestamp (2026-11-03T10:00:00Z) when the value carries a time of day, else "".
+
+    The news wire sorts by this within a day. A bare date isn't a time, so it stays empty.
+    """
+    value = normalize_space(value)
+    if not value or len(value) < 16:
+        return ""
+    parsed: Optional[datetime] = None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        try:
+            parsed = parsedate_to_datetime(value)
+        except (TypeError, ValueError, IndexError):
+            return ""
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    try:
+        parsed = parsed.astimezone(timezone.utc)
+    except (OverflowError, OSError, ValueError):
+        return ""
+    if not (2000 <= parsed.year <= 2100):
+        return ""
+    return parsed.replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
 def looks_like_feed(text: str) -> bool:
     head = text[:1500].lower()
     return "<rss" in head or "<feed" in head or "<rdf:rdf" in head
@@ -221,6 +248,7 @@ def parse_feed(text: str, feed_url: str, max_items: int = 8) -> List[Dict[str, s
                 "title": title,
                 "link": link,
                 "published": parse_date(raw_date) or "",
+                "published_at": parse_timestamp(raw_date),
                 "summary": strip_tags(
                     _child_text(node, "description", "summary", "encoded", "content")
                 ),

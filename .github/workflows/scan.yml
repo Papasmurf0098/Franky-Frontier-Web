@@ -2,9 +2,9 @@ name: Scan and publish
 
 on:
   schedule:
-    # Every 6 hours, off the hour. GitHub says the start of the hour is when runs get delayed.
+    # Every 3 hours, off the hour. GitHub says the start of the hour is when runs get delayed.
     # Each source's own cadence still decides whether it's read on a given run.
-    - cron: "23 */6 * * *"
+    - cron: "23 */3 * * *"
   workflow_dispatch:
     inputs:
       force:

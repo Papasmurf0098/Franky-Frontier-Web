@@ -11,10 +11,12 @@ from typing import Dict, List, Optional
 
 from . import __version__, state
 from .parsing import normalize_space
-from .scanner import ConfigError, load_sources, load_tools, run_scan
+from datetime import timedelta
+
+from .scanner import WIRE_KEEP_DAYS, ConfigError, load_sources, load_tools, run_scan
 from .site import build_site
 from .store import Store
-from .timeutil import now_utc
+from .timeutil import iso, now_utc
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SOURCES_PATH = REPO_ROOT / "config" / "sources.json"
@@ -28,8 +30,8 @@ def _print_result(result: Dict) -> None:
     # commands, so text from the web doesn't get printed anywhere it could start a line.
     print("%s: %s" % (result.get("run_id") or "no run", result["status"]))
     print(
-        "new=%s updated=%s watchlist=%s too_old=%s set_aside=%s"
-        % (result.get("findings", 0), result.get("updated", 0), result.get("watchlist", 0), result.get("stale", 0), result.get("set_aside", 0))
+        "new=%s updated=%s watchlist=%s headlines=%s too_old=%s set_aside=%s"
+        % (result.get("findings", 0), result.get("updated", 0), result.get("watchlist", 0), result.get("headlines", 0), result.get("stale", 0), result.get("set_aside", 0))
     )
     for source in result["sources"]:
         print("  %-28s %-15s %s" % (source["name"], source["status"], normalize_space(source.get("detail", ""))))
@@ -42,8 +44,8 @@ def _print_result(result: Dict) -> None:
         rows = "\n".join("| %s | %s |" % (source["name"], source["status"]) for source in result["sources"])
         with open(summary_path, "a", encoding="utf-8") as summary:
             summary.write(
-                "### Scan %s\n\n%s new, %s updated, %s on the watchlist.\n\n| Source | Status |\n|---|---|\n%s\n"
-                % (result["status"], result.get("findings", 0), result.get("updated", 0), result.get("watchlist", 0), rows)
+                "### Scan %s\n\n%s new, %s updated, %s on the watchlist, %s new headlines.\n\n| Source | Status |\n|---|---|\n%s\n"
+                % (result["status"], result.get("findings", 0), result.get("updated", 0), result.get("watchlist", 0), result.get("headlines", 0), rows)
             )
 
 
@@ -55,6 +57,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     print("History restored." if state.restore(state_dir) else "No history yet. This is the first scan.")
     store = Store(state_dir)
     store.seed_tools(tools, now_utc().date().isoformat())
+    store.backfill_headlines(sources, iso(now_utc() - timedelta(days=WIRE_KEEP_DAYS)))
     result = run_scan(store, sources, trigger=os.environ.get("GITHUB_EVENT_NAME", "manual"), force=args.force)
     state.save(store)
     build_site(store, SITE_SOURCE, Path(args.out), repository=os.environ.get("GITHUB_REPOSITORY", ""))
@@ -68,6 +71,7 @@ def cmd_build(args: argparse.Namespace) -> int:
     state.restore(state_dir)
     store = Store(state_dir)
     store.seed_tools(load_tools(TOOLS_PATH), now_utc().date().isoformat())
+    store.backfill_headlines(load_sources(SOURCES_PATH), iso(now_utc() - timedelta(days=WIRE_KEEP_DAYS)))
     build_site(store, SITE_SOURCE, Path(args.out), repository=os.environ.get("GITHUB_REPOSITORY", ""))
     print("Built %s" % args.out)
     return 0

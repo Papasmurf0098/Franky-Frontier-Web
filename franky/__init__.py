@@ -1,6 +1,6 @@
-"""Franky Frontier: an at-home AI opportunity radar, scanned and published entirely on GitHub."""
+"""Franky Frontier: an AI news hub and at-home opportunity radar, scanned and published entirely on GitHub."""
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 # Bump when data.json changes shape. See AGENT.md.
-DATA_SCHEMA_VERSION = 1
+DATA_SCHEMA_VERSION = 2

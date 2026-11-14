@@ -4,9 +4,12 @@ Read this before changing anything. It is the source of truth for what this proj
 
 ## The goal
 
-**Franky Frontier is an at-home AI opportunity radar that runs entirely on the web.**
+**Franky Frontier is an AI news hub with an at-home opportunity radar, and it runs entirely on the web.**
 
-It checks a short list of AI sources, keeps what someone could actually use at home, ranks it, and shows it on a public website. In the original dashboard's words, it should stay "practical, current, and allergic to hype".
+It has two layers, and the owner asked for both (November 13, 2026):
+
+- **The news wire:** every fresh headline from about 70 AI sources, filed under six desks and shown in moving banners and desk columns. The wire reports what publishers said. It doesn't judge.
+- **The radar:** the scored subset, which keeps what someone could actually use at home and ranks it. In the original dashboard's words, the radar should stay "practical, current, and allergic to hype".
 
 "Web only" means nothing runs on or is saved to anyone's device. GitHub Actions does the scan, a branch in this repo holds the history, and GitHub Pages serves the site. Closing every laptop changes nothing.
 
@@ -15,7 +18,7 @@ This repo started as a copy of `Papasmurf0098/Franky-web`, which is the on-devic
 ## How it fits together
 
 ```
-GitHub Actions, every 6 hours (.github/workflows/scan.yml)
+GitHub Actions, every 3 hours (.github/workflows/scan.yml)
   │
   ├─ ci/state.sh restore ─► scan-state branch ─► franky.sql, reports/
   │
@@ -24,6 +27,7 @@ GitHub Actions, every 6 hours (.github/workflows/scan.yml)
   │                   parsing.py (feeds and pages to plain data)
   │                   adapters.py (no-account JSON APIs to plain data)
   │                   scoring.py (deterministic rules)
+  │                   headlines table (the wire: everything fresh, scored or not)
   │     store.py ─► SQLite, which only exists during the run
   │     state.py ─► saves it back to franky.sql as text
   │     site.py ─► dist/ (site/index.html, data.json, reports/)
@@ -38,6 +42,9 @@ GitHub Actions, every 6 hours (.github/workflows/scan.yml)
 | To change | Edit |
 |---|---|
 | Which sites are scanned | `config/sources.json` |
+| Which desk a source files under, or whether it's scored | `desk` and `wire_only` on the source |
+| The list of desks | `DESKS` in `franky/scanner.py` and `DESKS` in `site/index.html`, plus a `.tone-` color |
+| The moving banners | `TICKERS` in `site/index.html`, plus a `<section class="ticker">` for each |
 | The tools shelf | `config/foundational_tools.json` |
 | What counts as useful or hype | `franky/scoring.py`, then read a real scan's results |
 | What the site shows | `site/index.html` |
@@ -71,7 +78,9 @@ GitHub Actions, every 6 hours (.github/workflows/scan.yml)
 
 ## Sources
 
-All are in `config/sources.json`, and none needs an account.
+All are in `config/sources.json`, and none needs an account. There are 71. Every source has a `desk`. A source with `wire_only: true` supplies headlines only: nothing from it is scored, and its article pages are never read.
+
+**The radar sources** are the table below, plus Mistral AI News, Google Developers Blog, Ollama Blog and n8n Blog, added November 13, 2026.
 
 | Source | Type | What it adds | Limits and care |
 |---|---|---|---|
@@ -84,6 +93,21 @@ All are in `config/sources.json`, and none needs an account.
 | OpenRouter: Free models | JSON API, `openrouter_free_models` | Free hosted models | Listing needs no account, but calling a model does, and cards say so |
 | DEV: Top AI posts | JSON API, `dev_articles` | How-to posts | Tier 3. Weakest source so far, so it's the first to cut |
 
+**Wire-only sources, added November 13, 2026.** Each was fetched with the project's own fetcher first, so `robots.txt` allowed it and the feed parsed.
+
+| Desk | Sources |
+|---|---|
+| Labs | Google DeepMind, NVIDIA Blog, Meta Engineering |
+| Industry | TechCrunch, The Verge, Ars Technica, MIT Technology Review, WIRED, The Decoder, The Guardian, ZDNET, Gizmodo, Fast Company, SiliconANGLE, The New Stack, IEEE Spectrum, InfoWorld, 9to5Mac, MarkTechPost, and CNBC, Engadget, Tom's Hardware and 404 Media filtered to AI |
+| Research | Hugging Face daily papers (JSON API, `hugging_face_papers`), Google Research, Microsoft Research, Apple ML Research, Berkeley AI Research, MIT News, ScienceDaily, Nature |
+| Builders | Simon Willison, Latent Space, Import AI, One Useful Thing, Interconnects, Ahead of AI, AWS ML Blog, GitHub Blog, Cloudflare, NVIDIA Developer, PyTorch, Together AI, KDnuggets, Towards Data Science |
+| Community | Two more Hacker News searches |
+| Releases | Trending Hugging Face models, and release feeds for Open WebUI, ComfyUI, Transformers, Claude Code, vLLM and LLM CLI |
+
+General feeds (NVIDIA, Meta, CNBC, Engadget, Tom's Hardware, 404 Media) use `require_keywords` to stay on AI. Check a new general feed's real results, because a keyword list lets some off-topic stories through.
+
+**Checked on November 13, 2026 and left out:** The Register and Reuters (`robots.txt` disallows), VentureBeat (429 on the first request, twice), Axios (403), Bloomberg, LangChain and InfoQ (the feed or its links leave the source's domain), Cohere and Stanford HAI (the feed declares a DOCTYPE), Stability AI and AI News (not valid XML), Meta AI, xAI, Perplexity, LM Studio and The Batch (no feed), Microsoft's AI blog (410). llama.cpp and LangChain release feeds are a build per commit, which is noise.
+
 **Checked on November 4, 2026 and left out:** Lobsters, arXiv and Reddit, because their `robots.txt` disallows it (Reddit also answered 403). GDELT rate-limited the first request. Hugging Face Spaces had poor signal. Check again before adding any of these.
 
 **To add an API source:** confirm it works with no account and that `robots.txt` allows it. Write a pure function in `franky/adapters.py`, add it to `ADAPTERS`, add a source to the config, and add tests with a hand-written response to `tests/test_api_sources.py`. Then read the results of a real scan, because the first version of these sources was mostly noise.
@@ -92,13 +116,16 @@ All are in `config/sources.json`, and none needs an account.
 
 `tests/test_dashboard_design.py` and `tests/test_web_only.py` enforce the checkable parts.
 
-- **The banner needs a visible pause button.** Moving content that lasts over five seconds must be pausable under WCAG 2.2.2, and pausing on hover or honoring reduced motion doesn't replace that. Keep the skip link too.
-- **Don't call the banner "live".** Scans run every 6 hours at best.
-- **Blur only the banner, masthead, lead story and side panels.** Never blur list cards, because many blurred layers slow a scrolling page.
+- **Every banner needs its own visible pause button.** Moving content that lasts over five seconds must be pausable under WCAG 2.2.2, and pausing on hover or honoring reduced motion doesn't replace that. The **Pause banners** button in the nav bar is an extra, not a replacement. Keep the skip link too.
+- **Don't call a banner "live".** Scans run every 3 hours at best.
+- **Blur only the top banner, nav bar, lead story, Just in and side panels.** Never blur the other banners, desk columns or list cards, because many blurred layers slow a scrolling page.
+- **A banner shows a fixed time, not "3h ago".** Banners aren't redrawn between scans, so a relative time would go out of date.
+- **Each desk has one accent color.** A new one needs a `--token`, a `.tone-` class, and a place in both contrast tests.
 - **Glass has to stay readable.** New colors must pass the contrast test against the worst-case backdrop, and glass keeps its solid fallbacks.
 - **No outside fonts, images or scripts.** The page's Content-Security-Policy would block them anyway.
 - **All paths are relative.** Pages serves the site from `/<repo>/`, so a path starting with `/` misses it.
-- **Hierarchy over decoration.** One lead story, then ranked top stories, then the feed. Don't repeat a story within a view.
+- **Hierarchy over decoration.** One lead story, then Just in, then the desks, then the radar. The lead and Just in are left out of the desk columns, and the radar feed starts after its ranked strip. Banners may repeat what's on the page, and a radar item may also be on its desk, because the radar is a second look at the same wire.
+- **Never invent a time.** A headline with no publish date says when a scan first saw it.
 - **Read dates with `parseDay`.** `new Date("2026-11-03")` means UTC midnight, which shows as the day before in the Americas.
 
 ## Before you say something works
@@ -117,7 +144,20 @@ python3 -m franky run --state-dir /tmp/franky-state --out /tmp/franky-site --for
 
 ## Current state
 
-Last updated November 5, 2026 (UTC).
+Last updated November 13, 2026 (UTC).
+
+**November 13, 2026: rebuilt as a news hub. Not pushed or run on GitHub yet.** Added the news wire (the `headlines` table, `headlines` in `data.json`, schema version 2), 58 sources, four moving banners, the desks, and one search for everything. Scans moved from every 6 hours to every 3.
+
+**Checked for this change:** 220 offline tests pass on Python 3.9. Two real scans of all 71 sources ran from a laptop into a throwaway folder. The first stored 441 headlines, 65 findings and 13 watchlist items, and 70 of 71 sources answered (Google DeepMind returned something that wasn't XML once). The second, from an empty history, read all 71 and stored 447 headlines, and a repeat scan straight after found nothing due and added nothing. The built site was viewed in a browser at desktop and phone widths: all four banners moved, each pause button and **Pause banners** worked, search filtered the desks and the radar, the console was empty, nothing was stored, and the page made no requests off the site.
+
+**Not checked for this change:**
+- Any run on GitHub. The first one restores a history saved before the wire existed. A test covers that with a made-up history, but not the real `scan-state` branch.
+- Whether all 58 new sources answer from GitHub's cloud. Some sites block cloud servers, and Source health will show which.
+- How long a scan of 71 sources takes on a runner. It took about a minute from a laptop, and the job limit is 15 minutes.
+- The page with hostile headline data in a browser. Every new list goes through `safeText` and `safeUrl`, the same as before.
+- The banners with the system Reduce Motion setting on.
+
+The notes below are from the first release and still hold, except that there are now 71 sources and scans run every 3 hours.
 
 **Live at <https://papasmurf0098.github.io/Franky-Frontier-Web/>.**
 
@@ -142,8 +182,12 @@ Last updated November 5, 2026 (UTC).
 - Upvote and star counts on a card are from when the item was first found.
 - Community results aren't vetted. Trending models include some with safety training removed. To hide them, add words like `uncensored` and `abliterated` to `exclude_keywords` on that source. That's the owner's call.
 - Hacker News cards have thin summaries, because linked pages are never read.
-- Scoring is keyword rules, so it makes visible mistakes. Tune with real results.
-- `scan-state` grows with every scan that changes something. It's small text, but it never shrinks.
+- Scoring is keyword rules, so it makes visible mistakes. Tune with real results. With four more radar sources, the November 13 scan rated 31 of 65 findings High, including customer case studies from OpenAI's feed. That's worth tightening.
+- The wire isn't scored or checked. It carries whatever the publisher's feed says, including opinion, gossip and corporate news.
+- Wire summaries come from the feed and are cut to 220 characters. Release feeds give raw release notes.
+- One source can crowd a desk for a day. Hugging Face papers all carry the same timestamp, so they arrive as a block.
+- Headlines older than 30 days leave the wire, and `data.json` carries at most 150 per desk.
+- `scan-state` grows with every scan that changes something. It's small text, but it never shrinks. The wire made it grow faster: the first scan's `franky.sql` was about 400 KB, and each scan now adds its new headlines to the branch's history.
 
 ## Decision log
 
@@ -166,3 +210,11 @@ Add a line when you make a decision a future agent might otherwise undo.
 - **2026-11-04: A community repost never replaces an existing finding.** Attention isn't part of the fingerprint either, or every upvote would look like an edit.
 - **2026-11-04: The lead story and memo's top item are the newest of the highest priority.** A news hub shouldn't lead with an old item because its keywords scored well.
 - **2026-11-04: Corporate news is capped at Low, and High requires a sign of usability.** Otherwise IPO filings from Tier 1 sources outrank things you could use.
+- **2026-11-13: The owner asked for a news hub, so the wire carries everything and the radar stays strict.** Loosening the scoring to let more news through would have ended the radar. Two layers keep both. Don't "fix" the wire by scoring it, and don't feed the press into the radar without asking.
+- **2026-11-13: New sources are wire only unless they publish things you can use.** Press, research, newsletters and release feeds would flood the radar with Medium findings. Only Mistral, Google Developers, the Ollama blog and n8n were added to the radar.
+- **2026-11-13: The wire keeps 30 days.** It's news, and a full archive would make `scan-state` grow without limit. `seen_items` still remembers every URL, so a pruned headline doesn't come back.
+- **2026-11-13: Wire-only sources never have their articles read.** The feed's own title and summary are enough for a headline, and it keeps a scan of 71 sources to two requests each.
+- **2026-11-13: `require_keywords` and `exclude_keywords` now apply to feeds, not only APIs.** General tech feeds need them. A feed whose entries are all off topic still counts as read fine.
+- **2026-11-13: Scans every 3 hours, and the press has a 2-hour cadence.** A cadence equal to the schedule would skip every other run, because a run rarely starts exactly on time.
+- **2026-11-13: Old findings are copied onto the wire at the start of each run.** The history predates the wire, and without this the Labs desk would start without OpenAI's or Anthropic's recent posts. It only copies findings from the last 30 days and skips what's already there.
+- **2026-11-13: One search box for the whole page.** Two boxes, one for headlines and one for the radar, made people guess which to use.

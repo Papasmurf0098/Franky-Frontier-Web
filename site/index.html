@@ -26,8 +26,10 @@
       --text-faint: #a89fc2;
       --amber: #ffc978;
       --coral: #ff9aa8;
+      --sky: #8ecbff;
+      --lime: #b9ea7f;
 
-      /* Blur is costly, so only the banner, masthead, lead story and side panels use it. */
+      /* Blur is costly, so only the top banner, nav bar, lead story and side panels use it. */
       --glass: rgba(24, 15, 46, 0.66);
       --glass-card: rgba(30, 19, 56, 0.72);
       --glass-bar: rgba(10, 6, 19, 0.82);
@@ -44,10 +46,10 @@
       --radius-m: 14px;
       --radius-s: 10px;
       --ticker-h: 44px;
-      --mast-h: 68px;
+      --nav-h: 52px;
       --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
 
-      --z-masthead: 20;
+      --z-nav: 20;
       --z-ticker: 30;
       --z-skip: 50;
     }
@@ -55,7 +57,7 @@
     *, *::before, *::after { box-sizing: border-box; }
     [hidden] { display: none !important; }
 
-    html { -webkit-text-size-adjust: 100%; scroll-padding-top: calc(var(--ticker-h) + var(--mast-h) + 16px); }
+    html { -webkit-text-size-adjust: 100%; scroll-padding-top: calc(var(--ticker-h) + var(--nav-h) + 16px); }
 
     body {
       margin: 0;
@@ -67,7 +69,7 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    h1, h2, h3, h4, p, ul, ol { margin: 0; padding: 0; }
+    h1, h2, h3, h4, p, ul, ol, dl { margin: 0; padding: 0; }
     ul, ol { list-style: none; }
     a { color: inherit; text-decoration: none; }
     button, input, select { font: inherit; color: inherit; }
@@ -114,21 +116,34 @@
       box-shadow: inset 0 1px 0 var(--glass-shine), 0 18px 40px rgba(4, 2, 12, 0.45);
     }
 
-    /* ---------- Headline banner ---------- */
+    /* Each desk has one accent, used for its label, its banner and its column rule. */
+    .tone-labs { --tone: var(--turquoise-400); }
+    .tone-industry { --tone: var(--violet-300); }
+    .tone-research { --tone: var(--sky); }
+    .tone-builders { --tone: var(--amber); }
+    .tone-community { --tone: var(--coral); }
+    .tone-releases { --tone: var(--lime); }
+
+    /* ---------- Headline banners ---------- */
 
     .ticker {
-      position: sticky; top: 0; z-index: var(--z-ticker);
       display: flex; align-items: stretch;
       height: var(--ticker-h);
       background: var(--glass-bar);
+      border-top: 1px solid var(--glass-line);
+      border-bottom: 1px solid var(--glass-line);
+    }
+    /* Only the top banner is sticky and blurred. The others scroll with the page. */
+    .ticker.is-top {
+      position: sticky; top: 0; z-index: var(--z-ticker);
       -webkit-backdrop-filter: var(--glass-blur);
       backdrop-filter: var(--glass-blur);
-      border-bottom: 1px solid rgba(53, 226, 208, 0.3);
+      border-top: 0; border-bottom-color: rgba(53, 226, 208, 0.3);
     }
     .ticker-label {
       flex: none; display: flex; align-items: center; gap: 8px; padding: 0 14px 0 16px;
       font: 700 0.72rem/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase;
-      color: var(--ink-on-turquoise); background: var(--turquoise-400);
+      color: var(--ink-on-turquoise); background: var(--tone, var(--turquoise-400));
     }
     .ticker-viewport {
       flex: 1; min-width: 0; overflow: hidden;
@@ -142,12 +157,13 @@
       animation: ticker-roll var(--ticker-duration, 80s) linear infinite;
       will-change: transform;
     }
+    .ticker.is-reverse .ticker-track { animation-direction: reverse; }
     @keyframes ticker-roll { to { transform: translate3d(calc(-1 * var(--ticker-shift, 50%)), 0, 0); } }
     .ticker-group { display: flex; align-items: stretch; height: 100%; }
     .ticker-item { display: flex; align-items: center; }
     .ticker-item::after {
       content: ""; flex: none; width: 5px; height: 5px; margin: 0 4px;
-      background: var(--violet-300); opacity: 0.55; transform: rotate(45deg);
+      background: var(--tone, var(--violet-300)); opacity: 0.55; transform: rotate(45deg);
     }
     .ticker-link {
       display: flex; align-items: center; gap: 10px; height: 100%; padding: 0 16px;
@@ -155,7 +171,7 @@
     }
     .ticker-link:hover { color: var(--turquoise-200); }
     .ticker-link:focus-visible { outline-offset: -3px; }
-    .ticker-source { font: 600 0.72rem/1 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--turquoise-400); }
+    .ticker-source { font: 600 0.72rem/1 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--tone, var(--turquoise-400)); }
     .ticker-priority { font: 700 0.66rem/1 var(--mono); letter-spacing: 0.06em; padding: 3px 5px; border-radius: 4px; }
     .ticker-priority.is-high { color: var(--ink-on-turquoise); background: var(--turquoise-400); }
     .ticker-priority.is-medium { color: var(--violet-300); box-shadow: inset 0 0 0 1px rgba(189, 166, 255, 0.55); }
@@ -174,6 +190,16 @@
     .ticker.is-paused .ticker-toggle .icon-play { display: block; }
     .ticker.is-paused .ticker-toggle .icon-pause { display: none; }
 
+    /* The big banner: top radar stories in headline type, moving the other way. */
+    .ticker.is-marquee { height: 68px; --tone: var(--violet-300); background: rgba(17, 10, 32, 0.9); }
+    .ticker.is-marquee .ticker-label { color: var(--obsidian-950); }
+    .ticker.is-marquee .ticker-headline { font: 600 1.3rem/1 var(--serif); letter-spacing: -0.01em; }
+    .ticker.is-marquee .ticker-link { gap: 12px; padding: 0 22px; }
+    .ticker.is-marquee .ticker-toggle { width: 52px; }
+    /* Banners inside the page sit on a rounded strip. */
+    .ticker.is-inset { border: 1px solid var(--glass-line); border-radius: var(--radius-m); overflow: hidden; }
+    .ticker.is-inset .ticker-label { color: var(--obsidian-950); }
+
     @media (hover: hover) {
       .ticker-viewport:hover .ticker-track { animation-play-state: paused; }
     }
@@ -187,59 +213,94 @@
 
     /* ---------- Masthead ---------- */
 
-    .masthead {
-      position: sticky; top: var(--ticker-h); z-index: var(--z-masthead);
-      background: rgba(17, 10, 32, 0.68);
+    .wrap { width: min(100%, 1440px); margin: 0 auto; padding-left: 24px; padding-right: 24px; }
+
+    .masthead { border-bottom: 1px solid var(--glass-line); }
+    .masthead-inner { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px 24px; flex-wrap: wrap; padding-top: 22px; padding-bottom: 18px; }
+    .brand { display: flex; align-items: center; gap: 16px; min-width: 0; }
+    .brand-mark { flex: none; width: 52px; height: 52px; }
+    .brand h1 { font: 600 clamp(2rem, 4.4vw, 3.3rem)/1 var(--serif); letter-spacing: -0.025em; }
+    .brand p { margin-top: 6px; font: 600 0.74rem/1.3 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--turquoise-400); }
+    .edition { display: grid; gap: 2px; text-align: right; font-size: 0.85rem; color: var(--text-soft); }
+    .edition-date { font: 600 1rem/1.3 var(--serif); color: var(--text); }
+    .scan-status strong { font-weight: 600; color: var(--text); }
+
+    .navbar {
+      position: sticky; top: var(--ticker-h); z-index: var(--z-nav);
+      background: rgba(17, 10, 32, 0.72);
       -webkit-backdrop-filter: var(--glass-blur);
       backdrop-filter: var(--glass-blur);
       border-bottom: 1px solid var(--glass-line);
     }
-    .masthead-inner, .page { width: min(100%, 1360px); margin: 0 auto; padding-left: 24px; padding-right: 24px; }
-    .masthead-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: var(--mast-h); padding-top: 10px; padding-bottom: 10px; }
-    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
-    .brand-mark { flex: none; width: 34px; height: 34px; }
-    .brand h1 { font: 600 1.3rem/1.15 var(--serif); letter-spacing: -0.01em; }
-    .brand p { font-size: 0.8rem; line-height: 1.3; color: var(--text-faint); }
-    .scan-area { display: flex; align-items: center; gap: 14px; min-width: 0; }
-    .scan-status { font-size: 0.85rem; color: var(--text-soft); text-align: right; }
-    .scan-status strong { font-weight: 600; color: var(--text); }
+    .navbar-inner { display: flex; align-items: center; gap: 12px; min-height: var(--nav-h); }
+    .nav-links { display: flex; align-items: center; gap: 2px; flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+    .nav-links::-webkit-scrollbar { display: none; }
+    .nav-link {
+      flex: none; display: inline-flex; align-items: center; gap: 7px; min-height: 36px; padding: 0 11px; border-radius: 999px;
+      font-size: 0.86rem; font-weight: 600; color: var(--text-soft); white-space: nowrap;
+      transition: color 160ms var(--ease), background-color 160ms var(--ease);
+    }
+    .nav-link:hover { color: var(--text); background: rgba(255, 255, 255, 0.08); }
+    .nav-link .pip { width: 7px; height: 7px; border-radius: 2px; background: var(--tone, var(--text-faint)); transform: rotate(45deg); }
+    .nav-sep { flex: none; width: 1px; height: 18px; margin: 0 6px; background: var(--glass-line); }
+
+    .search { position: relative; flex: 0 1 260px; min-width: 150px; display: block; }
+    .search svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-faint); pointer-events: none; }
+    .search input, .field select {
+      width: 100%; min-height: 38px; border-radius: var(--radius-s); font-size: 16px;
+      background: rgba(10, 6, 19, 0.55); border: 1px solid rgba(255, 255, 255, 0.16); color: var(--text);
+      transition: border-color 160ms var(--ease);
+    }
+    .search input { padding: 0 10px 0 34px; }
+    .search input::placeholder { color: var(--text-faint); opacity: 1; }
+    .search input:hover, .field select:hover { border-color: rgba(255, 255, 255, 0.3); }
+    .search input:focus-visible, .field select:focus-visible { border-color: var(--turquoise-400); outline-offset: 0; }
 
     .btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-      min-height: 42px; padding: 0 18px; border-radius: var(--radius-s);
+      min-height: 38px; padding: 0 14px; border-radius: var(--radius-s);
       border: 1px solid var(--glass-line); background: rgba(255, 255, 255, 0.06);
-      font-weight: 600; font-size: 0.9rem; white-space: nowrap;
-      transition: background-color 160ms var(--ease), border-color 160ms var(--ease), filter 160ms var(--ease);
+      font-weight: 600; font-size: 0.86rem; white-space: nowrap;
+      transition: background-color 160ms var(--ease), border-color 160ms var(--ease);
     }
     .btn:hover { background: rgba(255, 255, 255, 0.11); border-color: rgba(255, 255, 255, 0.2); }
+    .btn[aria-pressed="true"] { border-color: var(--amber); color: var(--amber); }
+    .btn .icon-play { display: none; }
+    .btn[aria-pressed="true"] .icon-play { display: block; }
+    .btn[aria-pressed="true"] .icon-pause { display: none; }
 
     .notice {
       background: rgba(255, 201, 120, 0.12); border-bottom: 1px solid rgba(255, 201, 120, 0.4);
       color: var(--amber); font-size: 0.9rem;
     }
-    .notice-inner { width: min(100%, 1360px); margin: 0 auto; padding: 10px 24px; }
+    .notice-inner { padding-top: 10px; padding-bottom: 10px; }
 
     /* ---------- Page layout ---------- */
 
-    .page { padding-top: 24px; padding-bottom: 56px; display: grid; gap: 24px; }
+    .page { padding-top: 24px; padding-bottom: 56px; display: grid; gap: 32px; }
+    .page > *, .section > * { min-width: 0; }
+    .section { display: grid; gap: 16px; }
 
-    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .section-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; padding-bottom: 10px; border-bottom: 2px solid var(--text); }
+    .section-head h2 { font: 600 1.7rem/1.15 var(--serif); letter-spacing: -0.015em; }
+    .section-note { font-size: 0.85rem; color: var(--text-faint); }
+
+    .stats { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
     .stat {
-      display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
-      padding: 12px 16px; text-align: left; border-radius: var(--radius-m);
+      display: grid; gap: 4px; padding: 12px 14px; text-align: left; border-radius: var(--radius-m);
       background: var(--glass-card); border: 1px solid var(--glass-line);
       transition: border-color 160ms var(--ease), background-color 160ms var(--ease);
     }
     .stat:hover { border-color: rgba(53, 226, 208, 0.55); }
     .stat[aria-pressed="true"] { border-color: var(--turquoise-400); background: rgba(53, 226, 208, 0.1); }
-    .stat-label { font-size: 0.82rem; color: var(--text-soft); }
-    .stat-value { font: 600 1.35rem/1 var(--mono); font-variant-numeric: tabular-nums; color: var(--turquoise-200); }
+    .stat-value { font: 600 1.5rem/1 var(--mono); font-variant-numeric: tabular-nums; color: var(--turquoise-200); }
+    .stat-label { font-size: 0.78rem; line-height: 1.3; color: var(--text-soft); }
 
-    .front { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 16px; }
+    .front { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 16px; }
 
     .lead {
       position: relative; display: flex; flex-direction: column; justify-content: flex-end; gap: 14px;
-      min-height: 360px; padding: 32px; border-radius: var(--radius-l); border: 1px solid transparent;
+      min-height: 380px; padding: 32px; border-radius: var(--radius-l); border: 1px solid transparent;
       background:
         linear-gradient(150deg, rgba(38, 24, 72, 0.76), rgba(17, 10, 32, 0.74)) padding-box,
         linear-gradient(130deg, rgba(53, 226, 208, 0.75), rgba(123, 77, 255, 0.55) 55%, rgba(255, 255, 255, 0.08)) border-box;
@@ -276,20 +337,59 @@
     .panel { border-radius: var(--radius-l); padding: 20px; }
     .panel-title { font: 600 0.74rem/1.2 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--violet-300); }
 
-    .top-list { display: flex; flex-direction: column; gap: 4px; }
-    .top-list ol { display: flex; flex-direction: column; flex: 1; justify-content: space-between; margin-top: 8px; }
-    .top-item { position: relative; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 2px 8px; padding: 12px 0; border-top: 1px solid var(--glass-line); }
-    .top-item:first-child { border-top: 0; }
+    /* Just in: the newest headlines from every desk, with the time down the left edge. */
+    .just-in { display: flex; flex-direction: column; gap: 6px; }
+    .just-in ol { display: flex; flex-direction: column; flex: 1; justify-content: space-between; margin-top: 6px; }
+    .just-item { display: grid; grid-template-columns: 62px minmax(0, 1fr); gap: 2px 10px; padding: 9px 0; border-top: 1px solid var(--glass-line); }
+    .just-item:first-child { border-top: 0; }
+    .just-time { font: 600 0.74rem/1.7 var(--mono); color: var(--tone, var(--turquoise-400)); }
+    .just-item h3 { font: 600 0.98rem/1.3 var(--serif); }
+    .just-item .wire-meta { grid-column: 2; }
+
+    .wire-link { transition: color 160ms var(--ease); }
+    .wire-link:hover { color: var(--turquoise-200); }
+    .wire-meta { display: flex; flex-wrap: wrap; gap: 2px 8px; font-size: 0.76rem; color: var(--text-faint); }
+    .wire-source { font-weight: 600; color: var(--tone, var(--text-soft)); }
+    .wire-meta > * + *::before { content: "·"; margin-right: 8px; }
+
+    /* ---------- Desks ---------- */
+
+    .desks { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 16px; align-items: start; }
+    /* Desk columns are not blurred, for the same reason as cards. */
+    .desk {
+      display: grid; gap: 4px; padding: 18px 18px 14px; border-radius: var(--radius-m);
+      background: var(--glass-card); border: 1px solid var(--glass-line); border-top: 3px solid var(--tone);
+    }
+    .desk-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+    .desk-head h3 { font: 600 1.3rem/1.2 var(--serif); letter-spacing: -0.01em; }
+    .desk-count { font: 600 0.72rem/1 var(--mono); color: var(--tone); }
+    .desk-blurb { font-size: 0.8rem; color: var(--text-faint); }
+    .desk-list { margin-top: 6px; }
+    .desk-item { display: grid; gap: 3px; padding: 10px 0; border-top: 1px solid var(--glass-line); }
+    .desk-item h4 { font: 600 0.98rem/1.32 var(--serif); }
+    .desk-item.is-first h4 { font-size: 1.22rem; line-height: 1.24; }
+    .desk-summary { font-size: 0.86rem; color: var(--text-soft); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+    .desk-more {
+      margin-top: 4px; min-height: 36px; border-radius: var(--radius-s); border: 1px solid var(--glass-line);
+      background: transparent; font-size: 0.82rem; font-weight: 600; color: var(--text-soft);
+      transition: color 160ms var(--ease), border-color 160ms var(--ease);
+    }
+    .desk-more:hover { color: var(--text); border-color: var(--tone); }
+    .desk-empty { padding: 10px 0; font-size: 0.86rem; color: var(--text-faint); border-top: 1px solid var(--glass-line); }
+
+    /* ---------- Radar ---------- */
+
+    .top-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 12px; }
+    .top-item { position: relative; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 2px 8px; align-content: start; padding: 14px 16px; border-radius: var(--radius-m); background: var(--glass-card); border: 1px solid var(--glass-line); transition: border-color 160ms var(--ease); }
+    .top-item:hover { border-color: rgba(53, 226, 208, 0.55); }
     .top-rank { font: 600 0.95rem/1.5 var(--mono); color: var(--turquoise-400); }
     .top-item h3 { font: 600 1.08rem/1.28 var(--serif); }
     .top-item .meta { grid-column: 2; }
 
     .columns { display: grid; grid-template-columns: minmax(0, 1fr) 348px; gap: 24px; align-items: start; }
 
-    /* ---------- Feed and filters ---------- */
-
     .feed-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; margin-bottom: 12px; }
-    .feed-head h2 { font: 600 1.5rem/1.2 var(--serif); letter-spacing: -0.01em; }
+    .feed-head h3 { font: 600 1.3rem/1.2 var(--serif); letter-spacing: -0.01em; }
     .feed-status { font-size: 0.85rem; color: var(--text-faint); }
 
     .controls { display: grid; gap: 12px; padding: 14px; border-radius: var(--radius-m); margin-bottom: 20px; background: var(--glass-card); border: 1px solid var(--glass-line); }
@@ -302,18 +402,6 @@
     }
     .tab:hover { color: var(--text); background: rgba(255, 255, 255, 0.11); }
     .tab[aria-pressed="true"] { color: var(--ink-on-turquoise); background: var(--turquoise-400); }
-
-    .search { position: relative; flex: 1 1 240px; min-width: 0; display: block; }
-    .search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-faint); pointer-events: none; }
-    .search input, .field select {
-      width: 100%; min-height: 42px; border-radius: var(--radius-s); font-size: 16px;
-      background: rgba(10, 6, 19, 0.55); border: 1px solid rgba(255, 255, 255, 0.16); color: var(--text);
-      transition: border-color 160ms var(--ease);
-    }
-    .search input { padding: 0 12px 0 36px; }
-    .search input::placeholder { color: var(--text-faint); opacity: 1; }
-    .search input:hover, .field select:hover { border-color: rgba(255, 255, 255, 0.3); }
-    .search input:focus-visible, .field select:focus-visible { border-color: var(--turquoise-400); outline-offset: 0; }
 
     .toggles { display: flex; flex-wrap: wrap; gap: 12px; }
     .toggle-group { display: inline-flex; align-items: center; padding: 3px; border-radius: var(--radius-s); background: rgba(10, 6, 19, 0.55); border: 1px solid rgba(255, 255, 255, 0.12); }
@@ -335,14 +423,14 @@
     .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-top: 10px; }
     .field { display: grid; gap: 5px; }
     .field label { font-size: 0.78rem; font-weight: 600; color: var(--text-soft); }
-    .field select { padding: 0 10px; }
+    .field select { padding: 0 10px; min-height: 42px; }
     .field select option { background: var(--obsidian-800); }
     .clear-row { margin-top: 10px; }
 
     .feed { display: grid; gap: 24px; }
     .group-title { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font: 600 0.74rem/1.2 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--violet-300); }
     .group-title::after { content: ""; flex: 1; height: 1px; background: var(--glass-line); }
-    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 12px; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 12px; }
 
     /* Cards are not blurred: many blurred layers in a scrolling list would slow the page. */
     .card {
@@ -363,7 +451,6 @@
 
     .empty { padding: 28px 20px; text-align: center; border-radius: var(--radius-m); color: var(--text-soft); background: var(--glass-card); border: 1px solid var(--glass-line); }
     .empty b { display: block; margin-bottom: 4px; font: 600 1.15rem/1.3 var(--serif); color: var(--text); }
-    .empty code { font-family: var(--mono); font-size: 0.9em; color: var(--turquoise-200); }
 
     /* ---------- Side rail ---------- */
 
@@ -408,13 +495,14 @@
 
     .show-more { width: 100%; }
 
-    .footer { font-size: 0.8rem; color: var(--text-faint); text-align: center; padding-top: 8px; }
+    .footer { font-size: 0.8rem; color: var(--text-faint); text-align: center; padding-top: 8px; max-width: 90ch; margin: 0 auto; }
 
     /* ---------- Responsive ---------- */
 
     @media (max-width: 1100px) {
       .columns { grid-template-columns: minmax(0, 1fr); }
       .rail { grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); align-items: start; }
+      .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
 
     @media (max-width: 880px) {
@@ -424,25 +512,28 @@
 
     @media (max-width: 720px) {
       html { scroll-padding-top: calc(var(--ticker-h) + 12px); }
-      .masthead { position: static; }
-      .masthead-inner { flex-wrap: wrap; }
-      .scan-area { width: 100%; justify-content: space-between; }
-      .scan-status { text-align: left; }
-      .masthead-inner, .page { padding-left: 16px; padding-right: 16px; }
-      .notice-inner { padding-left: 16px; padding-right: 16px; }
-      .page { padding-top: 16px; gap: 16px; }
+      .wrap { padding-left: 16px; padding-right: 16px; }
+      .navbar { position: static; }
+      .navbar-inner { flex-wrap: wrap; padding-top: 8px; padding-bottom: 10px; }
+      .nav-links { flex: 1 1 100%; }
+      .search { flex: 1 1 160px; }
+      .edition { text-align: left; }
+      .brand-mark { width: 40px; height: 40px; }
+      .page { padding-top: 16px; gap: 24px; }
       .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .lead { min-height: 0; padding: 22px; }
       .lead-summary { font-size: 1rem; }
       .ticker-label { padding: 0 12px; }
       .ticker-link { font-size: 0.82rem; }
+      .ticker.is-marquee { height: 56px; }
+      .ticker.is-marquee .ticker-headline { font-size: 1.08rem; }
+      .section-head h2 { font-size: 1.4rem; }
     }
 
     @media (pointer: coarse) {
-      .tab, .toggle-group button, .btn { min-height: 44px; }
+      .tab, .toggle-group button, .btn, .nav-link, .desk-more { min-height: 44px; }
       .search input, .field select { min-height: 44px; }
       .more-filters summary, .sources summary { min-height: 44px; }
-      .stat { min-height: 44px; }
     }
 
     /* ---------- Accessibility preferences and fallbacks ---------- */
@@ -451,18 +542,18 @@
       *, *::before, *::after { transition-duration: 0.01ms !important; }
       .ticker-track { animation: none; }
       .ticker-viewport { overflow-x: auto; }
-      .ticker-toggle { display: none; }
+      .ticker-toggle, .pause-all { display: none; }
     }
 
     /* Without blur, or for people who ask for less transparency, panels become solid. */
     @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-      .glass, .masthead { background: var(--glass-solid); }
-      .ticker { background: var(--obsidian-950); }
+      .glass, .navbar { background: var(--glass-solid); }
+      .ticker.is-top { background: var(--obsidian-950); }
       .lead { background: linear-gradient(150deg, var(--obsidian-700), var(--obsidian-900)) padding-box, linear-gradient(130deg, var(--turquoise-400), var(--violet-500)) border-box; }
     }
     @media (prefers-reduced-transparency: reduce) {
-      .glass, .masthead, .card, .controls, .stat, .empty { background: var(--glass-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
-      .ticker { background: var(--obsidian-950); -webkit-backdrop-filter: none; backdrop-filter: none; }
+      .glass, .navbar, .card, .controls, .stat, .empty, .desk, .top-item { background: var(--glass-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
+      .ticker, .ticker.is-top, .ticker.is-marquee { background: var(--obsidian-950); -webkit-backdrop-filter: none; backdrop-filter: none; }
       .lead { background: linear-gradient(150deg, var(--obsidian-700), var(--obsidian-900)) padding-box, linear-gradient(130deg, var(--turquoise-400), var(--violet-500)) border-box; -webkit-backdrop-filter: none; backdrop-filter: none; }
     }
     @media (prefers-contrast: more) {
@@ -472,12 +563,12 @@
 </head>
 <body>
   <div class="backdrop" aria-hidden="true"></div>
-  <a class="skip-link" href="#main">Skip to findings</a>
+  <a class="skip-link" href="#main">Skip to the news</a>
 
-  <section class="ticker" id="ticker" aria-label="Latest headlines">
+  <section class="ticker is-top" id="ticker" aria-label="Latest headlines">
     <div class="ticker-label">Latest</div>
-    <div class="ticker-viewport" id="tickerViewport">
-      <div class="ticker-track" id="tickerTrack"><p class="ticker-empty">Loading headlines...</p></div>
+    <div class="ticker-viewport">
+      <div class="ticker-track"><p class="ticker-empty">Loading headlines...</p></div>
     </div>
     <button class="ticker-toggle" id="tickerToggle" type="button" aria-label="Pause headlines" title="Pause headlines">
       <svg class="icon-pause" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="3" y="2" width="3.5" height="12" rx="1"/><rect x="9.5" y="2" width="3.5" height="12" rx="1"/></svg>
@@ -486,7 +577,7 @@
   </section>
 
   <header class="masthead">
-    <div class="masthead-inner">
+    <div class="masthead-inner wrap">
       <div class="brand">
         <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
           <defs><linearGradient id="gem" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#35e2d0"/><stop offset="1" stop-color="#7b4dff"/></linearGradient></defs>
@@ -495,146 +586,223 @@
         </svg>
         <div>
           <h1>Franky Frontier</h1>
-          <p>At-home AI opportunity radar</p>
+          <p>AI news hub and at-home radar</p>
         </div>
       </div>
-      <div class="scan-area">
+      <div class="edition">
+        <p class="edition-date" id="editionDate"></p>
         <p class="scan-status" id="scanStatus" role="status">Loading...</p>
       </div>
     </div>
   </header>
 
-  <div class="notice" id="notice" role="alert" hidden><div class="notice-inner" id="noticeText"></div></div>
+  <nav class="navbar" aria-label="Sections">
+    <div class="navbar-inner wrap">
+      <div class="nav-links" id="navLinks">
+        <a class="nav-link" href="#front">Front page</a>
+        <span class="nav-sep" aria-hidden="true"></span>
+        <span id="deskLinks" style="display:contents"></span>
+        <span class="nav-sep" aria-hidden="true"></span>
+        <a class="nav-link" href="#radar">Radar</a>
+        <a class="nav-link" href="#watchlist">Watchlist</a>
+        <a class="nav-link" href="#sourcesBox">Sources</a>
+      </div>
+      <label class="search">
+        <span class="sr-only">Search every headline</span>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="4.6"/><path d="m10.6 10.6 3.4 3.4"/></svg>
+        <input id="searchFilter" type="search" placeholder="Search every headline" autocomplete="off" />
+      </label>
+      <button class="btn pause-all" id="pauseAll" type="button" aria-pressed="false">
+        <svg class="icon-pause" width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="3" y="2" width="3.5" height="12" rx="1"/><rect x="9.5" y="2" width="3.5" height="12" rx="1"/></svg>
+        <svg class="icon-play" width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4 2.6c0-.8.9-1.3 1.6-.8l8 5.4c.6.4.6 1.2 0 1.6l-8 5.4c-.7.5-1.6 0-1.6-.8z"/></svg>
+        <span id="pauseAllText">Pause banners</span>
+      </button>
+    </div>
+  </nav>
 
-  <div class="page" id="page">
+  <div class="notice" id="notice" role="alert" hidden><div class="notice-inner wrap" id="noticeText"></div></div>
+
+  <section class="ticker is-marquee is-reverse" id="tickerRadar" aria-label="Top of the radar" hidden>
+    <div class="ticker-label">Top of the radar</div>
+    <div class="ticker-viewport"><div class="ticker-track"></div></div>
+    <button class="ticker-toggle" type="button">
+      <svg class="icon-pause" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="3" y="2" width="3.5" height="12" rx="1"/><rect x="9.5" y="2" width="3.5" height="12" rx="1"/></svg>
+      <svg class="icon-play" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4 2.6c0-.8.9-1.3 1.6-.8l8 5.4c.6.4.6 1.2 0 1.6l-8 5.4c-.7.5-1.6 0-1.6-.8z"/></svg>
+    </button>
+  </section>
+
+  <main class="page wrap" id="main" tabindex="-1">
     <section class="stats" id="stats" aria-label="At a glance"></section>
 
-    <section class="front" id="frontPage" aria-labelledby="frontTitle">
-      <h2 class="sr-only" id="frontTitle">Top stories</h2>
+    <section class="front" id="front" aria-labelledby="frontTitle">
+      <h2 class="sr-only" id="frontTitle">Front page</h2>
       <article class="lead" id="lead" hidden></article>
-      <div class="panel top-list glass" id="topStories" hidden></div>
+      <div class="panel just-in glass" id="justIn" hidden></div>
     </section>
 
-    <div class="columns">
-      <main id="main" tabindex="-1">
-        <div class="feed-head">
-          <h2 id="feedTitle">More findings</h2>
-          <p class="feed-status" id="filterStatus" role="status">Loading findings...</p>
+    <section class="ticker is-inset tone-labs" id="tickerLabs" aria-label="Labs and research headlines" hidden>
+      <div class="ticker-label">Labs and research</div>
+      <div class="ticker-viewport"><div class="ticker-track"></div></div>
+      <button class="ticker-toggle" type="button">
+        <svg class="icon-pause" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="3" y="2" width="3.5" height="12" rx="1"/><rect x="9.5" y="2" width="3.5" height="12" rx="1"/></svg>
+        <svg class="icon-play" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4 2.6c0-.8.9-1.3 1.6-.8l8 5.4c.6.4.6 1.2 0 1.6l-8 5.4c-.7.5-1.6 0-1.6-.8z"/></svg>
+      </button>
+    </section>
+
+    <section class="section" id="desks" aria-labelledby="desksTitle">
+      <div class="section-head">
+        <h2 id="desksTitle">The news desks</h2>
+        <p class="section-note" id="wireStatus" role="status">Loading headlines...</p>
+      </div>
+      <div class="desks" id="deskGrid"></div>
+    </section>
+
+    <section class="ticker is-inset is-reverse tone-community" id="tickerCommunity" aria-label="Community and release headlines" hidden>
+      <div class="ticker-label">Community and releases</div>
+      <div class="ticker-viewport"><div class="ticker-track"></div></div>
+      <button class="ticker-toggle" type="button">
+        <svg class="icon-pause" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="3" y="2" width="3.5" height="12" rx="1"/><rect x="9.5" y="2" width="3.5" height="12" rx="1"/></svg>
+        <svg class="icon-play" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4 2.6c0-.8.9-1.3 1.6-.8l8 5.4c.6.4.6 1.2 0 1.6l-8 5.4c-.7.5-1.6 0-1.6-.8z"/></svg>
+      </button>
+    </section>
+
+    <section class="section" id="radar" aria-labelledby="radarTitle">
+      <div class="section-head">
+        <h2 id="radarTitle">The radar</h2>
+        <p class="section-note">The headlines scored highest for something you can use at home.</p>
+      </div>
+
+      <ol class="top-strip" id="topStories" hidden></ol>
+
+      <div class="columns">
+        <div>
+          <div class="feed-head">
+            <h3 id="feedTitle">More findings</h3>
+            <p class="feed-status" id="filterStatus" role="status">Loading findings...</p>
+          </div>
+
+          <div class="controls">
+            <div class="controls-row">
+              <div class="tabs" role="group" aria-label="Quick views">
+                <button class="tab" type="button" data-view="all" aria-pressed="true">All</button>
+                <button class="tab" type="button" data-view="high" aria-pressed="false">High priority</button>
+                <button class="tab" type="button" data-view="latest" aria-pressed="false">Latest run</button>
+                <button class="tab" type="button" data-view="frontier" aria-pressed="false">Frontier</button>
+                <button class="tab" type="button" data-view="local" aria-pressed="false">Runs locally</button>
+              </div>
+              <div class="toggles">
+                <div class="toggle-group" role="group" aria-label="Sort order">
+                  <button type="button" data-sort="top" aria-pressed="true">Top</button>
+                  <button type="button" data-sort="newest" aria-pressed="false">Newest</button>
+                </div>
+                <div class="toggle-group" role="group" aria-label="Layout">
+                  <button type="button" data-layout="cards" aria-pressed="true">Cards</button>
+                  <button type="button" data-layout="list" aria-pressed="false">List</button>
+                </div>
+              </div>
+            </div>
+            <details class="more-filters" id="moreFilters">
+              <summary>More filters</summary>
+              <div class="filter-grid">
+                <div class="field">
+                  <label for="priorityFilter">Priority</label>
+                  <select id="priorityFilter">
+                    <option value="">All priorities</option>
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="deviceFilter">Device or barrier</label>
+                  <select id="deviceFilter">
+                    <option value="">All access types</option>
+                    <option value="Phone">Phone</option>
+                    <option value="Laptop">Laptop</option>
+                    <option value="Both">Both</option>
+                    <option value="No-code">No-code</option>
+                    <option value="Low-code">Low-code</option>
+                    <option value="Code">Code</option>
+                    <option value="Runs locally">Runs locally</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="repeatFilter">Repeat coverage</label>
+                  <select id="repeatFilter">
+                    <option value="">All findings</option>
+                    <option value="repeat">Seen more than once</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="runFilter">Scan</label>
+                  <select id="runFilter"><option value="">All scans</option></select>
+                </div>
+              </div>
+              <div class="clear-row"><button class="btn" id="clearFilters" type="button">Clear all filters</button></div>
+            </details>
+          </div>
+
+          <div class="feed" id="findingsGrid"></div>
         </div>
 
-        <div class="controls">
-          <div class="controls-row">
-            <div class="tabs" role="group" aria-label="Quick views">
-              <button class="tab" type="button" data-view="all" aria-pressed="true">All</button>
-              <button class="tab" type="button" data-view="high" aria-pressed="false">High priority</button>
-              <button class="tab" type="button" data-view="latest" aria-pressed="false">Latest run</button>
-              <button class="tab" type="button" data-view="frontier" aria-pressed="false">Frontier</button>
-              <button class="tab" type="button" data-view="local" aria-pressed="false">Runs locally</button>
-            </div>
-          </div>
-          <div class="controls-row">
-            <label class="search">
-              <span class="sr-only">Search headlines and summaries</span>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="4.6"/><path d="m10.6 10.6 3.4 3.4"/></svg>
-              <input id="searchFilter" type="search" placeholder="Search headlines and summaries" autocomplete="off" />
-            </label>
-            <div class="toggles">
-              <div class="toggle-group" role="group" aria-label="Sort order">
-                <button type="button" data-sort="top" aria-pressed="true">Top</button>
-                <button type="button" data-sort="newest" aria-pressed="false">Newest</button>
-              </div>
-              <div class="toggle-group" role="group" aria-label="Layout">
-                <button type="button" data-layout="cards" aria-pressed="true">Cards</button>
-                <button type="button" data-layout="list" aria-pressed="false">List</button>
-              </div>
-            </div>
-          </div>
-          <details class="more-filters" id="moreFilters">
-            <summary>More filters</summary>
-            <div class="filter-grid">
-              <div class="field">
-                <label for="priorityFilter">Priority</label>
-                <select id="priorityFilter">
-                  <option value="">All priorities</option>
-                  <option value="High">High</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Low">Low</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="deviceFilter">Device or barrier</label>
-                <select id="deviceFilter">
-                  <option value="">All access types</option>
-                  <option value="Phone">Phone</option>
-                  <option value="Laptop">Laptop</option>
-                  <option value="Both">Both</option>
-                  <option value="No-code">No-code</option>
-                  <option value="Low-code">Low-code</option>
-                  <option value="Code">Code</option>
-                  <option value="Runs locally">Runs locally</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="repeatFilter">Repeat coverage</label>
-                <select id="repeatFilter">
-                  <option value="">All findings</option>
-                  <option value="repeat">Seen more than once</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="runFilter">Scan</label>
-                <select id="runFilter"><option value="">All scans</option></select>
-              </div>
-            </div>
-            <div class="clear-row"><button class="btn" id="clearFilters" type="button">Clear all filters</button></div>
-          </details>
-        </div>
+        <aside class="rail" aria-label="Scan memo, watchlist, tools, and sources">
+          <section class="panel glass" aria-labelledby="memoTitle">
+            <h3 class="panel-title" id="memoTitle">Scan memo</h3>
+            <div id="memo" style="display:grid;gap:12px"></div>
+          </section>
+          <section class="panel glass" id="watchlist" aria-labelledby="watchTitle">
+            <h3 class="panel-title" id="watchTitle">Watchlist</h3>
+            <ul class="rail-list" id="watchGrid"></ul>
+            <button class="btn show-more" id="watchMore" type="button" hidden></button>
+          </section>
+          <section class="panel glass" aria-labelledby="toolsTitle">
+            <h3 class="panel-title" id="toolsTitle">Foundational tools</h3>
+            <ul class="rail-list" id="toolsGrid"></ul>
+          </section>
+          <section class="panel glass" id="sourcesBox" aria-labelledby="sourcesTitle">
+            <h3 class="panel-title" id="sourcesTitle">Source health</h3>
+            <details class="sources" id="sourcesPanel">
+              <summary id="sourcesSummary">No sources checked yet</summary>
+              <ul class="rail-list" id="sourceGrid"></ul>
+            </details>
+            <a class="text-link" id="runScanLink" target="_blank" rel="noopener noreferrer" hidden>Run a scan now (repo owner only)</a>
+          </section>
+        </aside>
+      </div>
+    </section>
 
-        <div class="feed" id="findingsGrid"></div>
-      </main>
-
-      <aside class="rail" aria-label="Scan memo, watchlist, tools, and sources">
-        <section class="panel glass" aria-labelledby="memoTitle">
-          <h2 class="panel-title" id="memoTitle">Scan memo</h2>
-          <div id="memo" style="display:grid;gap:12px"></div>
-        </section>
-        <section class="panel glass" id="watchlist" aria-labelledby="watchTitle">
-          <h2 class="panel-title" id="watchTitle">Watchlist</h2>
-          <ul class="rail-list" id="watchGrid"></ul>
-          <button class="btn show-more" id="watchMore" type="button" hidden></button>
-        </section>
-        <section class="panel glass" aria-labelledby="toolsTitle">
-          <h2 class="panel-title" id="toolsTitle">Foundational tools</h2>
-          <ul class="rail-list" id="toolsGrid"></ul>
-        </section>
-        <section class="panel glass" aria-labelledby="sourcesTitle">
-          <h2 class="panel-title" id="sourcesTitle">Source health</h2>
-          <details class="sources" id="sourcesPanel">
-            <summary id="sourcesSummary">No sources checked yet</summary>
-            <ul class="rail-list" id="sourceGrid"></ul>
-          </details>
-          <a class="text-link" id="runScanLink" target="_blank" rel="noopener noreferrer" hidden>Run a scan now (repo owner only)</a>
-        </section>
-      </aside>
-    </div>
-
-    <footer class="footer">Scanned on a schedule by GitHub Actions and published as a static site. Nothing runs on or is saved to your device. Rankings come from keyword rules, not an editor, so check the source before acting. Tier 1 is a company's own channel, Tier 2 a vendor blog, and Tier 3 a community source anyone can post to.</footer>
-  </div>
+    <footer class="footer">Scanned on a schedule by GitHub Actions and published as a static site, so headlines are a few hours old at best. Nothing runs on or is saved to your device. Every headline links to its publisher, and nothing here is written or checked by an editor. Radar rankings come from keyword rules, so check the source before acting. Tier 1 is a company's own channel, Tier 2 a publication or vendor blog, and Tier 3 a community source anyone can post to.</footer>
+  </main>
 
   <script>
     // Relative, because GitHub Pages serves this from /<repo>/, not from the root of the site.
     const FRANKY_CONFIG = { dataUrl: "data.json" };
-    const SCAN_EVERY_HOURS = 6;
-    const STALE_AFTER_HOURS = SCAN_EVERY_HOURS * 3;
+    const SCAN_EVERY_HOURS = 3;
+    const STALE_AFTER_HOURS = 12;
     const CHECK_EVERY_MS = 5 * 60 * 1000;
 
-    const TICKER_ITEMS = 20;
-    const TICKER_SPEED_PX_PER_SECOND = 55;
+    const JUST_IN = 8;
     const TOP_STORIES = 4;
+    const DESK_PREVIEW = 7;
+    const DESK_STEP = 10;
+    const DESK_SEARCH_LIMIT = 40;
     const WATCH_PREVIEW = 6;
     const PRIORITY_RANK = { High: 0, Medium: 1, Low: 2 };
     const WATCH_RANK = { "Frontier Watch": 0, Momentum: 1, "Confirmation Gap": 2 };
     const FLAG_LABELS = { publish_date_unknown: "Publish date unknown", speculative: "Speculative", corporate_news: "Corporate news" };
+
+    // The sections of the hub. The ids match "desk" in config/sources.json.
+    const DESKS = [
+      { id: "Labs", blurb: "Straight from the companies building the models." },
+      { id: "Industry", blurb: "What the technology press is reporting." },
+      { id: "Research", blurb: "Papers and research from labs and universities." },
+      { id: "Builders", blurb: "How-tos, analysis and engineering blogs." },
+      { id: "Community", blurb: "What people are upvoting and building." },
+      { id: "Releases", blurb: "New models and new versions of key tools." }
+    ];
+    const DESK_IDS = DESKS.map(desk => desk.id);
+    const FALLBACK_DESK = "Industry";
+    const toneClass = desk => `tone-${String(desk).toLowerCase()}`;
 
     const SOURCE_STATES = {
       ok: { label: "Read fine", tone: "good" },
@@ -645,10 +813,12 @@
       circuit_open: { label: "Paused after failures", tone: "warn" },
       offline: { label: "Offline", tone: "warn" }
     };
+    const TONE_ORDER = { bad: 0, warn: 1, good: 2 };
 
     const ICON_OUT = `<svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5 8.5 3.5M4 3.5h4.5V8"/></svg>`;
 
     const state = {
+      headlines: [],
       findings: [],
       summaries: [],
       watchlist: [],
@@ -656,6 +826,7 @@
       sources: [],
       meta: {},
       watchExpanded: false,
+      deskShown: {},
       filters: { view: "all", runId: "", priority: "", access: "", repeat: "", search: "" },
       sort: "top",
       layout: "cards"
@@ -663,13 +834,13 @@
 
     const byId = id => document.getElementById(id);
     const els = {
-      ticker: byId("ticker"),
-      tickerViewport: byId("tickerViewport"),
-      tickerTrack: byId("tickerTrack"),
-      tickerToggle: byId("tickerToggle"),
       stats: byId("stats"),
-      frontPage: byId("frontPage"),
+      front: byId("front"),
       lead: byId("lead"),
+      justIn: byId("justIn"),
+      deskLinks: byId("deskLinks"),
+      deskGrid: byId("deskGrid"),
+      wireStatus: byId("wireStatus"),
       topStories: byId("topStories"),
       feedTitle: byId("feedTitle"),
       filterStatus: byId("filterStatus"),
@@ -687,8 +858,11 @@
       repeatFilter: byId("repeatFilter"),
       searchFilter: byId("searchFilter"),
       clearFilters: byId("clearFilters"),
+      editionDate: byId("editionDate"),
       scanStatus: byId("scanStatus"),
       runScanLink: byId("runScanLink"),
+      pauseAll: byId("pauseAll"),
+      pauseAllText: byId("pauseAllText"),
       notice: byId("notice"),
       noticeText: byId("noticeText")
     };
@@ -725,89 +899,6 @@
       return "";
     }
 
-    function normalizeFindings(rows) {
-      return rows.map(item => ({
-        id: pick(item, "finding_id"),
-        date: pick(item, "date"),
-        runId: pick(item, "run_id"),
-        headline: pick(item, "headline"),
-        category: pick(item, "category"),
-        company: pick(item, "tool_or_company"),
-        summary: pick(item, "summary"),
-        atHomeUse: pick(item, "at_home_use"),
-        sourceName: pick(item, "source_name"),
-        sourceTier: pick(item, "source_tier"),
-        sourceUrl: pick(item, "source_url"),
-        access: pick(item, "device_access_technical_barrier"),
-        priority: pick(item, "priority"),
-        score: Number(pick(item, "score")) || 0,
-        repeat: pick(item, "repeat_relevance_marker"),
-        status: pick(item, "status"),
-        notes: pick(item, "notes")
-      }));
-    }
-
-    function normalizeSummaries(rows) {
-      return rows.map(item => ({
-        runId: pick(item, "run_id"),
-        runDate: pick(item, "run_date"),
-        finishedAt: pick(item, "finished_at"),
-        range: pick(item, "time_range"),
-        summary: pick(item, "summary"),
-        topTakeaway: pick(item, "top_takeaway"),
-        findingsCount: pick(item, "num_findings"),
-        updatedCount: pick(item, "num_updated"),
-        watchCount: pick(item, "num_watchlist_items"),
-        status: pick(item, "status"),
-        link: pick(item, "link_to_report")
-      }));
-    }
-
-    function normalizeWatchlist(rows) {
-      return rows.map(item => ({
-        id: pick(item, "watch_id"),
-        runId: pick(item, "run_id"),
-        dateAdded: pick(item, "date_added"),
-        item: pick(item, "item_trend"),
-        category: pick(item, "category"),
-        why: pick(item, "why_watched"),
-        needs: pick(item, "what_needs_confirmation"),
-        sourceLead: pick(item, "source_lead"),
-        sourceUrl: pick(item, "source_url"),
-        priority: pick(item, "priority"),
-        status: pick(item, "status"),
-        lastReviewed: pick(item, "last_reviewed")
-      }));
-    }
-
-    function normalizeTools(rows) {
-      return rows.map(item => ({
-        id: pick(item, "tool_id"),
-        name: pick(item, "tool_name"),
-        category: pick(item, "category"),
-        useCase: pick(item, "core_use_case"),
-        access: pick(item, "accessibility")
-      }));
-    }
-
-    async function loadFrankyData() {
-      // GitHub Pages caches for a few minutes, and the query string asks for a fresh copy.
-      const response = await fetch(`${FRANKY_CONFIG.dataUrl}?t=${Date.now()}`, { cache: "no-store" });
-      if (!response.ok) throw new Error(`Data feed returned ${response.status}`);
-      const payload = await response.json();
-      return {
-        findings: normalizeFindings(payload.findings || []),
-        summaries: normalizeSummaries(payload.summaries || []),
-        watchlist: normalizeWatchlist(payload.watchlist || []),
-        tools: normalizeTools(payload.foundationalTools || []),
-        sources: payload.sources || [],
-        meta: {
-          generatedAt: pick(payload, "generated_at"),
-          repository: pick(payload, "repository")
-        }
-      };
-    }
-
     /* ---------- Dates ---------- */
 
     // Dates arrive as YYYY-MM-DD. new Date() would read that as UTC midnight, which shows as
@@ -815,6 +906,13 @@
     function parseDay(value) {
       const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value || ""));
       return match ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])) : null;
+    }
+
+    function parseMoment(value) {
+      // Full timestamps only. A bare date goes through parseDay.
+      if (!/^\d{4}-\d{2}-\d{2}T/.test(String(value || ""))) return null;
+      const when = new Date(value);
+      return Number.isNaN(when.getTime()) ? null : when;
     }
 
     function daysAgo(value) {
@@ -854,6 +952,118 @@
       return sameDay ? time : `${when.toLocaleDateString(undefined, { month: "short", day: "numeric" })}, ${time}`;
     }
 
+    /* ---------- Loading ---------- */
+
+    function normalizeHeadlines(rows) {
+      return rows.map(item => {
+        const publishedAt = pick(item, "published_at");
+        const date = pick(item, "date");
+        const capturedAt = pick(item, "captured_at");
+        // The best time known: when it was published, else the day, else when a scan first saw it.
+        const moment = parseMoment(publishedAt) || parseDay(date) || parseMoment(capturedAt);
+        const desk = pick(item, "desk");
+        return {
+          id: pick(item, "url"),
+          url: pick(item, "url"),
+          headline: pick(item, "headline"),
+          summary: pick(item, "summary"),
+          sourceName: pick(item, "source_name"),
+          company: pick(item, "company"),
+          desk: DESK_IDS.includes(desk) ? desk : FALLBACK_DESK,
+          date,
+          publishedAt,
+          capturedAt,
+          signal: pick(item, "signal"),
+          when: moment ? moment.getTime() : 0
+        };
+      }).sort((a, b) => b.when - a.when);
+    }
+
+    function normalizeFindings(rows) {
+      return rows.map(item => ({
+        id: pick(item, "finding_id"),
+        date: pick(item, "date"),
+        runId: pick(item, "run_id"),
+        headline: pick(item, "headline"),
+        category: pick(item, "category"),
+        company: pick(item, "tool_or_company"),
+        summary: pick(item, "summary"),
+        atHomeUse: pick(item, "at_home_use"),
+        sourceName: pick(item, "source_name"),
+        sourceTier: pick(item, "source_tier"),
+        sourceUrl: pick(item, "source_url"),
+        access: pick(item, "device_access_technical_barrier"),
+        priority: pick(item, "priority"),
+        score: Number(pick(item, "score")) || 0,
+        repeat: pick(item, "repeat_relevance_marker"),
+        status: pick(item, "status"),
+        notes: pick(item, "notes")
+      }));
+    }
+
+    function normalizeSummaries(rows) {
+      return rows.map(item => ({
+        runId: pick(item, "run_id"),
+        runDate: pick(item, "run_date"),
+        finishedAt: pick(item, "finished_at"),
+        range: pick(item, "time_range"),
+        summary: pick(item, "summary"),
+        topTakeaway: pick(item, "top_takeaway"),
+        findingsCount: pick(item, "num_findings"),
+        updatedCount: pick(item, "num_updated"),
+        watchCount: pick(item, "num_watchlist_items"),
+        headlinesCount: pick(item, "num_headlines"),
+        status: pick(item, "status"),
+        link: pick(item, "link_to_report")
+      }));
+    }
+
+    function normalizeWatchlist(rows) {
+      return rows.map(item => ({
+        id: pick(item, "watch_id"),
+        runId: pick(item, "run_id"),
+        dateAdded: pick(item, "date_added"),
+        item: pick(item, "item_trend"),
+        category: pick(item, "category"),
+        why: pick(item, "why_watched"),
+        needs: pick(item, "what_needs_confirmation"),
+        sourceLead: pick(item, "source_lead"),
+        sourceUrl: pick(item, "source_url"),
+        priority: pick(item, "priority"),
+        status: pick(item, "status"),
+        lastReviewed: pick(item, "last_reviewed")
+      }));
+    }
+
+    function normalizeTools(rows) {
+      return rows.map(item => ({
+        id: pick(item, "tool_id"),
+        name: pick(item, "tool_name"),
+        category: pick(item, "category"),
+        useCase: pick(item, "core_use_case"),
+        access: pick(item, "accessibility")
+      }));
+    }
+
+    async function loadFrankyData() {
+      // GitHub Pages caches for a few minutes, and the query string asks for a fresh copy.
+      const response = await fetch(`${FRANKY_CONFIG.dataUrl}?t=${Date.now()}`, { cache: "no-store" });
+      if (!response.ok) throw new Error(`Data feed returned ${response.status}`);
+      const payload = await response.json();
+      return {
+        headlines: normalizeHeadlines(payload.headlines || []),
+        findings: normalizeFindings(payload.findings || []),
+        summaries: normalizeSummaries(payload.summaries || []),
+        watchlist: normalizeWatchlist(payload.watchlist || []),
+        tools: normalizeTools(payload.foundationalTools || []),
+        sources: payload.sources || [],
+        meta: {
+          generatedAt: pick(payload, "generated_at"),
+          repository: pick(payload, "repository")
+        }
+      };
+    }
+
     /* ---------- Sorting and filtering ---------- */
 
     const priorityRank = item => PRIORITY_RANK[item.priority] ?? 3;
@@ -874,8 +1084,8 @@
     const accessParts = item => String(item.access || "").split("|").map(part => part.trim()).filter(Boolean);
 
     function getLatestRunId() {
-      // The newest run that found something. Most scans find nothing new, and a quiet scan
-      // shouldn't blank the memo. The masthead reports the true last scan.
+      // The newest run that found something. Most scans find nothing new for the radar, and a
+      // quiet scan shouldn't blank the memo. The masthead reports the true last scan.
       const hasNews = item => Number(item.findingsCount) || Number(item.updatedCount) || Number(item.watchCount);
       const runIds = [...new Set([
         ...state.summaries.filter(hasNews).map(item => item.runId).filter(Boolean),
@@ -894,8 +1104,10 @@
       return inWatch || /frontier/i.test(item.summary || "");
     }
 
+    const searchText = () => state.filters.search.toLowerCase();
+
     function matchesFilters(item, latestRunId) {
-      const { view, runId, priority, access, repeat, search } = state.filters;
+      const { view, runId, priority, access, repeat } = state.filters;
       const parts = accessParts(item).map(part => part.toLowerCase());
       if (view === "high" && item.priority !== "High") return false;
       if (view === "latest" && item.runId !== latestRunId) return false;
@@ -911,100 +1123,191 @@
         const alsoBoth = ["laptop", "phone"].includes(wanted) && parts.includes("both");
         if (!parts.includes(wanted) && !alsoBoth) return false;
       }
+      const search = searchText();
       if (search) {
-        const hay = `${item.headline} ${item.summary} ${item.company} ${item.category}`.toLowerCase();
-        if (!hay.includes(search.toLowerCase())) return false;
+        const hay = `${item.headline} ${item.summary} ${item.company} ${item.category} ${item.sourceName}`.toLowerCase();
+        if (!hay.includes(search)) return false;
       }
       return true;
     }
 
-    const isFiltering = () => {
+    function matchesSearch(item) {
+      const search = searchText();
+      if (!search) return true;
+      return `${item.headline} ${item.summary} ${item.sourceName} ${item.company}`.toLowerCase().includes(search);
+    }
+
+    const isSearching = () => Boolean(state.filters.search);
+    const isFilteringRadar = () => {
       const { view, runId, priority, access, repeat, search } = state.filters;
       return view !== "all" || Boolean(runId || priority || access || repeat || search);
     };
 
-    /* ---------- Headline banner ---------- */
+    const radarTop = () => [...state.findings].sort(byTop);
+    const leadStory = () => radarTop()[0] || null;
 
-    function tickerItem(item) {
-      const url = safeUrl(item.sourceUrl);
+    // The newest headlines for the front page. The lead story is left out so it isn't shown twice.
+    function justInItems() {
+      const leadUrl = leadStory()?.sourceUrl;
+      return state.headlines.filter(item => item.url !== leadUrl).slice(0, JUST_IN);
+    }
+
+    /* ---------- Headline times ---------- */
+
+    function agoLabel(item) {
+      const published = parseMoment(item.publishedAt);
+      if (published) {
+        const minutes = Math.max(1, Math.round((Date.now() - published.getTime()) / 60000));
+        if (minutes < 60) return `${minutes}m ago`;
+        if (minutes < 60 * 24) return `${Math.round(minutes / 60)}h ago`;
+        if (minutes < 60 * 24 * 7) return `${Math.round(minutes / 1440)}d ago`;
+        return published.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+      }
+      if (item.date) return relativeDay(item.date);
+      // No publish date came with it, and this page never invents one.
+      const seen = clockLabel(item.capturedAt);
+      return seen ? `Seen ${seen}` : "Date unknown";
+    }
+
+    // Banners keep running between refreshes, so they show a fixed time that can't go out of date.
+    function fixedLabel(item) {
+      const published = parseMoment(item.publishedAt);
+      if (published) return clockLabel(item.publishedAt);
+      return item.date ? shortDay(item.date) : "";
+    }
+
+    function whenTag(item) {
+      const stamp = item.publishedAt || item.date || "";
+      return `<time ${stamp ? `datetime="${safeText(stamp)}" title="${safeText(clockLabel(item.publishedAt) || stamp)}"` : ""}>${safeText(agoLabel(item))}</time>`;
+    }
+
+    /* ---------- Headline banners ---------- */
+
+    function wireTickerItem(item) {
+      const url = safeUrl(item.url);
       const body = `
-        <span class="ticker-source">${safeText(item.company || item.sourceName)}</span>
-        <span class="ticker-priority ${priorityClass(item.priority)}">${safeText(String(item.priority || "Unrated").toUpperCase())}</span>
+        <span class="ticker-source">${safeText(item.sourceName || item.company)}</span>
         <span class="ticker-headline">${safeText(item.headline)}</span>
-        <span class="ticker-when">${safeText(shortDay(item.date))}</span>`;
+        <span class="ticker-when">${safeText(fixedLabel(item))}</span>`;
       return `<li class="ticker-item">${url
         ? `<a class="ticker-link" href="${safeText(url)}" target="_blank" rel="noopener noreferrer">${body}</a>`
         : `<span class="ticker-link">${body}</span>`}</li>`;
     }
 
-    let tickerSignature = null;
-
-    function renderTicker() {
-      const items = [...state.findings].sort(byNewest).slice(0, TICKER_ITEMS);
-      const signature = items.map(item => `${item.id}|${item.headline}|${item.priority}`).join("\n");
-      // Only rebuild when the headlines change, so a refresh doesn't make the banner jump.
-      if (signature === tickerSignature) return;
-      tickerSignature = signature;
-      els.ticker.classList.toggle("is-empty", !items.length);
-      if (!items.length) {
-        els.tickerTrack.innerHTML = `<p class="ticker-empty">No headlines yet. The first scan hasn't finished.</p>`;
-        return;
-      }
-      els.tickerTrack.innerHTML = `<ul class="ticker-group">${items.map(tickerItem).join("")}</ul>`;
-      layoutTicker();
+    function radarTickerItem(item) {
+      const url = safeUrl(item.sourceUrl);
+      const body = `
+        <span class="ticker-priority ${priorityClass(item.priority)}">${safeText(String(item.priority || "Unrated").toUpperCase())}</span>
+        <span class="ticker-headline">${safeText(item.headline)}</span>
+        <span class="ticker-source">${safeText(item.company || item.sourceName)}</span>`;
+      return `<li class="ticker-item">${url
+        ? `<a class="ticker-link" href="${safeText(url)}" target="_blank" rel="noopener noreferrer">${body}</a>`
+        : `<span class="ticker-link">${body}</span>`}</li>`;
     }
 
-    // The banner loops by showing copies of the list and sliding exactly one list-width.
-    function layoutTicker() {
-      const first = els.tickerTrack.querySelector(".ticker-group");
+    const fromDesks = (...desks) => state.headlines.filter(item => desks.includes(item.desk));
+
+    // Every moving banner on the page. Each has its own pause button, and one button pauses them all.
+    const TICKERS = [
+      { id: "ticker", name: "headlines", speed: 55, item: wireTickerItem, pick: () => state.headlines.slice(0, 24),
+        empty: "No headlines yet. The first scan hasn't finished." },
+      { id: "tickerRadar", name: "radar headlines", speed: 42, item: radarTickerItem, pick: () => radarTop().slice(0, 12) },
+      { id: "tickerLabs", name: "labs and research headlines", speed: 48, item: wireTickerItem, pick: () => fromDesks("Labs", "Research").slice(0, 18) },
+      { id: "tickerCommunity", name: "community and release headlines", speed: 50, item: wireTickerItem, pick: () => fromDesks("Community", "Releases").slice(0, 18) }
+    ];
+
+    function renderTicker(ticker) {
+      const items = ticker.pick();
+      const signature = items.map(item => `${item.id}|${item.headline}|${item.priority || ""}`).join("\n");
+      // Only rebuild when the headlines change, so a refresh doesn't make the banner jump.
+      if (signature === ticker.signature) return;
+      ticker.signature = signature;
+      ticker.el.classList.toggle("is-empty", !items.length);
+      if (!items.length) {
+        ticker.el.hidden = !ticker.empty;
+        ticker.track.innerHTML = ticker.empty ? `<p class="ticker-empty">${safeText(ticker.empty)}</p>` : "";
+        return;
+      }
+      ticker.el.hidden = false;
+      ticker.track.innerHTML = `<ul class="ticker-group">${items.map(ticker.item).join("")}</ul>`;
+      layoutTicker(ticker);
+    }
+
+    // A banner loops by showing copies of the list and sliding exactly one list-width.
+    function layoutTicker(ticker) {
+      const first = ticker.track.querySelector(".ticker-group");
       if (!first) return;
-      els.tickerTrack.querySelectorAll(".ticker-group[aria-hidden]").forEach(copy => copy.remove());
+      ticker.track.querySelectorAll(".ticker-group[aria-hidden]").forEach(copy => copy.remove());
       if (prefersReducedMotion()) return;
       const width = first.getBoundingClientRect().width;
       if (!width) return;
-      const copies = Math.max(1, Math.ceil(els.tickerViewport.clientWidth / width));
+      const copies = Math.max(1, Math.ceil(ticker.viewport.clientWidth / width));
       for (let index = 0; index < copies; index += 1) {
         const copy = first.cloneNode(true);
         // Screen readers and the Tab key get each headline once. Copies still work with a mouse.
         copy.setAttribute("aria-hidden", "true");
         copy.querySelectorAll("a").forEach(link => { link.tabIndex = -1; });
-        els.tickerTrack.appendChild(copy);
+        ticker.track.appendChild(copy);
       }
-      els.tickerTrack.style.setProperty("--ticker-shift", `${width}px`);
-      els.tickerTrack.style.setProperty("--ticker-duration", `${Math.max(20, width / TICKER_SPEED_PX_PER_SECOND)}s`);
+      ticker.track.style.setProperty("--ticker-shift", `${width}px`);
+      ticker.track.style.setProperty("--ticker-duration", `${Math.max(20, width / ticker.speed)}s`);
     }
 
-    function setTickerPaused(paused) {
-      els.ticker.classList.toggle("is-paused", paused);
-      const label = paused ? "Play headlines" : "Pause headlines";
-      els.tickerToggle.setAttribute("aria-label", label);
-      els.tickerToggle.title = label;
+    function setTickerPaused(ticker, paused) {
+      ticker.el.classList.toggle("is-paused", paused);
+      const label = `${paused ? "Play" : "Pause"} ${ticker.name}`;
+      ticker.toggle.setAttribute("aria-label", label);
+      ticker.toggle.title = label;
     }
 
-    function bindTicker() {
-      els.tickerToggle.addEventListener("click", () => setTickerPaused(!els.ticker.classList.contains("is-paused")));
-      // Keyboard focus only. A mouse click also focuses a link, and the banner shouldn't jump for that.
-      els.tickerViewport.addEventListener("focusin", event => {
-        if (event.target.matches(":focus-visible")) els.ticker.classList.add("is-manual");
+    function syncPauseAll() {
+      const allPaused = TICKERS.every(ticker => ticker.el.classList.contains("is-paused"));
+      els.pauseAll.setAttribute("aria-pressed", String(allPaused));
+      els.pauseAllText.textContent = allPaused ? "Play banners" : "Pause banners";
+    }
+
+    function bindTickers() {
+      TICKERS.forEach(ticker => {
+        ticker.el = byId(ticker.id);
+        ticker.viewport = ticker.el.querySelector(".ticker-viewport");
+        ticker.track = ticker.el.querySelector(".ticker-track");
+        ticker.toggle = ticker.el.querySelector(".ticker-toggle");
+        ticker.signature = null;
+        ticker.width = ticker.viewport.clientWidth;
+        setTickerPaused(ticker, false);
+        ticker.toggle.addEventListener("click", () => {
+          setTickerPaused(ticker, !ticker.el.classList.contains("is-paused"));
+          syncPauseAll();
+        });
+        // Keyboard focus only. A mouse click also focuses a link, and the banner shouldn't jump for that.
+        ticker.viewport.addEventListener("focusin", event => {
+          if (event.target.matches(":focus-visible")) ticker.el.classList.add("is-manual");
+        });
+        ticker.viewport.addEventListener("focusout", event => {
+          if (ticker.viewport.contains(event.relatedTarget)) return;
+          ticker.el.classList.remove("is-manual");
+          ticker.viewport.scrollLeft = 0;
+        });
       });
-      els.tickerViewport.addEventListener("focusout", event => {
-        if (els.tickerViewport.contains(event.relatedTarget)) return;
-        els.ticker.classList.remove("is-manual");
-        els.tickerViewport.scrollLeft = 0;
+      els.pauseAll.addEventListener("click", () => {
+        const pause = els.pauseAll.getAttribute("aria-pressed") !== "true";
+        TICKERS.forEach(ticker => setTickerPaused(ticker, pause));
+        syncPauseAll();
       });
       let resizeTimer = null;
-      let lastWidth = els.tickerViewport.clientWidth;
       window.addEventListener("resize", () => {
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(() => {
-          if (els.tickerViewport.clientWidth === lastWidth) return;
-          lastWidth = els.tickerViewport.clientWidth;
-          layoutTicker();
+          TICKERS.forEach(ticker => {
+            if (ticker.viewport.clientWidth === ticker.width) return;
+            ticker.width = ticker.viewport.clientWidth;
+            layoutTicker(ticker);
+          });
         }, 200);
       });
     }
 
-    /* ---------- Page sections ---------- */
+    /* ---------- Front page ---------- */
 
     function metaLine(item) {
       const source = [item.sourceName || item.company, item.sourceTier].filter(Boolean).join(", ");
@@ -1015,6 +1318,13 @@
       const url = safeUrl(item.sourceUrl);
       return url
         ? `<a class="story-link" href="${safeText(url)}" target="_blank" rel="noopener noreferrer">${safeText(item.headline)}</a>`
+        : safeText(item.headline);
+    }
+
+    function wireTitle(item) {
+      const url = safeUrl(item.url);
+      return url
+        ? `<a class="wire-link" href="${safeText(url)}" target="_blank" rel="noopener noreferrer">${safeText(item.headline)}</a>`
         : safeText(item.headline);
     }
 
@@ -1032,30 +1342,31 @@
     }
 
     function renderStats(latestRunId) {
-      const latest = state.findings.filter(item => item.runId === latestRunId).length;
+      const dayAgo = Date.now() - 86400000;
+      const fresh = state.headlines.filter(item => item.when >= dayAgo).length;
+      const reporting = new Set(state.headlines.map(item => item.sourceName)).size;
       const high = state.findings.filter(item => item.priority === "High").length;
       const local = state.findings.filter(item => accessParts(item).includes("Runs locally")).length;
       const tiles = [
+        { label: "Headlines in the last 24 hours", value: fresh, jump: "desks" },
+        { label: "Sources with headlines", value: reporting, jump: "sourcesBox" },
+        { label: "On the radar", value: state.findings.length, jump: "radar" },
         { label: "High priority", value: high, view: "high" },
-        { label: "New in latest run", value: latest, view: "latest" },
         { label: "Runs locally", value: local, view: "local" },
         { label: "On the watchlist", value: state.watchlist.length, jump: "watchlist" }
       ];
       els.stats.innerHTML = tiles.map(tile => `
         <button class="stat" type="button" ${tile.view ? `data-view="${tile.view}" aria-pressed="${state.filters.view === tile.view}"` : `data-jump="${tile.jump}"`}>
-          <span class="stat-label">${safeText(tile.label)}</span>
           <span class="stat-value">${safeText(tile.value)}</span>
+          <span class="stat-label">${safeText(tile.label)}</span>
         </button>`).join("");
     }
 
-    function frontStories() {
-      return [...state.findings].sort(byTop).slice(0, 1 + TOP_STORIES);
-    }
-
     function renderFront() {
-      const stories = isFiltering() ? [] : frontStories();
-      els.frontPage.hidden = !stories.length;
-      const [lead, ...rest] = stories;
+      // A search takes over the page, so the front page steps aside for the results.
+      const lead = isSearching() ? null : leadStory();
+      const justIn = isSearching() ? [] : justInItems();
+      els.front.hidden = !lead && !justIn.length;
       els.lead.hidden = !lead;
       if (lead) {
         const note = friendlyNotes(lead.notes);
@@ -1068,16 +1379,94 @@
           ${metaLine(lead)}
           ${chips(lead)}`;
       }
-      els.topStories.hidden = !rest.length;
-      els.topStories.innerHTML = rest.length ? `
-        <p class="panel-title">Also important</p>
-        <ol>${rest.map((item, index) => `
-          <li class="top-item">
-            <span class="top-rank" aria-hidden="true">${String(index + 2).padStart(2, "0")}</span>
-            <h3>${storyTitle(item)}</h3>
-            ${metaLine(item)}
+      els.justIn.hidden = !justIn.length;
+      els.justIn.innerHTML = justIn.length ? `
+        <p class="panel-title">Just in</p>
+        <ol>${justIn.map(item => `
+          <li class="just-item ${toneClass(item.desk)}">
+            <span class="just-time">${safeText(agoLabel(item))}</span>
+            <h3>${wireTitle(item)}</h3>
+            <p class="wire-meta"><span class="wire-source">${safeText(item.sourceName)}</span><span>${safeText(item.desk)}</span></p>
           </li>`).join("")}</ol>` : "";
-      els.frontPage.style.gridTemplateColumns = rest.length ? "" : "minmax(0, 1fr)";
+      els.front.style.gridTemplateColumns = lead && justIn.length ? "" : "minmax(0, 1fr)";
+    }
+
+    /* ---------- Desks ---------- */
+
+    function renderDeskLinks() {
+      els.deskLinks.innerHTML = DESKS.map(desk =>
+        `<a class="nav-link ${toneClass(desk.id)}" href="#desk-${desk.id}"><span class="pip" aria-hidden="true"></span>${safeText(desk.id)}</a>`).join("");
+    }
+
+    function deskItem(item, first) {
+      return `
+        <li class="desk-item ${first ? "is-first" : ""}">
+          <h4>${wireTitle(item)}</h4>
+          ${first && item.summary ? `<p class="desk-summary">${safeText(item.summary)}</p>` : ""}
+          <p class="wire-meta"><span class="wire-source">${safeText(item.sourceName)}</span>${whenTag(item)}${item.signal ? `<span>${safeText(item.signal)}</span>` : ""}</p>
+        </li>`;
+    }
+
+    function renderDesks() {
+      const searching = isSearching();
+      // What the front page already shows isn't repeated in the columns below it.
+      const shownUp = searching ? new Set() : new Set([leadStory()?.sourceUrl, ...justInItems().map(item => item.url)]);
+      const pool = state.headlines.filter(item => matchesSearch(item) && !shownUp.has(item.url));
+      const total = state.headlines.length;
+      const sources = new Set(state.headlines.map(item => item.sourceName)).size;
+
+      els.wireStatus.textContent = !total
+        ? ""
+        : searching
+          ? `${pool.length} of ${total} headlines match.`
+          : `${total} headlines from ${sources} sources, newest first.`;
+
+      if (!total) {
+        els.deskGrid.innerHTML = `<div class="empty"><b>No headlines yet</b>The first scan hasn't finished. Scans run on GitHub every few hours.</div>`;
+        return;
+      }
+      if (!pool.length) {
+        els.deskGrid.innerHTML = `<div class="empty"><b>No headline matches that search</b>Try a shorter word, or clear the search to see every desk.</div>`;
+        return;
+      }
+      els.deskGrid.innerHTML = DESKS.map(desk => {
+        const items = pool.filter(item => item.desk === desk.id);
+        // During a search, a desk with no matches would only push the results down the page.
+        if (searching && !items.length) return "";
+        const limit = searching ? DESK_SEARCH_LIMIT : (state.deskShown[desk.id] || DESK_PREVIEW);
+        const shown = items.slice(0, limit);
+        const left = items.length - shown.length;
+        return `
+          <section class="desk ${toneClass(desk.id)}" id="desk-${desk.id}" aria-labelledby="deskTitle-${desk.id}">
+            <div class="desk-head">
+              <h3 id="deskTitle-${desk.id}">${safeText(desk.id)}</h3>
+              <span class="desk-count">${items.length}</span>
+            </div>
+            <p class="desk-blurb">${safeText(desk.blurb)}</p>
+            ${shown.length
+              ? `<ul class="desk-list">${shown.map((item, index) => deskItem(item, index === 0)).join("")}</ul>`
+              : `<p class="desk-empty">Nothing new on this desk yet.</p>`}
+            ${left > 0 && !searching ? `<button class="desk-more" type="button" data-desk="${desk.id}">Show ${Math.min(DESK_STEP, left)} more of ${left}</button>` : ""}
+            ${left > 0 && searching ? `<p class="desk-empty">And ${left} more. Narrow the search to see them.</p>` : ""}
+          </section>`;
+      }).join("");
+    }
+
+    /* ---------- Radar ---------- */
+
+    function topStories() {
+      return radarTop().slice(1, 1 + TOP_STORIES);
+    }
+
+    function renderTopStories() {
+      const stories = isFilteringRadar() ? [] : topStories();
+      els.topStories.hidden = !stories.length;
+      els.topStories.innerHTML = stories.map((item, index) => `
+        <li class="top-item">
+          <span class="top-rank" aria-hidden="true">${String(index + 2).padStart(2, "0")}</span>
+          <h3>${storyTitle(item)}</h3>
+          ${metaLine(item)}
+        </li>`).join("");
     }
 
     function cardHtml(item) {
@@ -1116,11 +1505,12 @@
     }
 
     function renderFeed() {
-      const filtering = isFiltering();
+      const filtering = isFilteringRadar();
       const latestRunId = getLatestRunId();
       const sorter = state.sort === "newest" ? byNewest : byTop;
       const matches = state.findings.filter(item => matchesFilters(item, latestRunId)).sort(sorter);
-      const shownUp = filtering ? new Set() : new Set(frontStories().map(item => item.id));
+      // The lead story and the ranked strip are already on the page, so the feed starts after them.
+      const shownUp = filtering ? new Set() : new Set(radarTop().slice(0, 1 + TOP_STORIES).map(item => item.id));
       const items = matches.filter(item => !shownUp.has(item.id));
       const total = state.findings.length;
 
@@ -1132,18 +1522,18 @@
 
       if (!total) {
         els.filterStatus.textContent = "";
-        els.findingsGrid.innerHTML = `<div class="empty"><b>No findings yet</b>The first scan hasn't finished. Scans run on GitHub every few hours.</div>`;
+        els.findingsGrid.innerHTML = `<div class="empty"><b>Nothing on the radar yet</b>The first scan hasn't finished. Scans run on GitHub every few hours.</div>`;
         return;
       }
       if (!items.length) {
         els.findingsGrid.innerHTML = filtering
-          ? `<div class="empty"><b>Nothing matches these filters</b>Try fewer filters, or clear them to see everything.</div>`
+          ? `<div class="empty"><b>Nothing on the radar matches</b>Try fewer filters or a different search.</div>`
           : `<div class="empty"><b>That's everything</b>All findings are in the top stories above.</div>`;
         return;
       }
       els.findingsGrid.innerHTML = [...groupFindings(items)].map(([name, group]) => `
         <section>
-          <h3 class="group-title">${safeText(name)} (${group.length})</h3>
+          <h4 class="group-title">${safeText(name)} (${group.length})</h4>
           <div class="cards">${group.map(cardHtml).join("")}</div>
         </section>`).join("");
     }
@@ -1171,6 +1561,8 @@
       els.runFilter.value = runIds.includes(current) ? current : "";
       state.filters.runId = els.runFilter.value;
     }
+
+    /* ---------- Side rail ---------- */
 
     function renderMemo(latestRunId) {
       const run = state.summaries.find(item => item.runId === latestRunId);
@@ -1244,9 +1636,11 @@
       const healthy = state.sources.filter(source => infoFor(source).tone === "good").length;
       const allGood = healthy === state.sources.length;
       els.sourcesSummary.textContent = `${healthy} of ${state.sources.length} sources read fine`;
-      // A problem is never tucked away behind a collapsed panel.
+      // A problem is never tucked away behind a collapsed panel, or below a long list of healthy ones.
       if (!allGood) els.sourcesPanel.open = true;
-      els.sourceGrid.innerHTML = state.sources.map(source => {
+      const ordered = [...state.sources].sort((a, b) =>
+        TONE_ORDER[infoFor(a).tone] - TONE_ORDER[infoFor(b).tone] || String(a.name).localeCompare(String(b.name)));
+      els.sourceGrid.innerHTML = ordered.map(source => {
         const info = infoFor(source);
         const checked = source.last_checked ? clockLabel(source.last_checked) : "Never";
         return `
@@ -1261,13 +1655,15 @@
     function renderFilteredViews() {
       renderControls();
       renderFront();
+      renderDesks();
+      renderTopStories();
       renderFeed();
     }
 
     function renderAll() {
       const latestRunId = getLatestRunId();
       populateRunFilter();
-      renderTicker();
+      TICKERS.forEach(renderTicker);
       renderStats(latestRunId);
       renderFilteredViews();
       renderMemo(latestRunId);
@@ -1277,6 +1673,7 @@
     }
 
     function applyData(data) {
+      state.headlines = data.headlines;
       state.findings = data.findings;
       state.summaries = data.summaries;
       state.watchlist = data.watchlist;
@@ -1299,10 +1696,14 @@
       const when = clockLabel(state.meta.generatedAt || latest.finishedAt) || latest.runDate;
       if (latest.status === "offline") return `Scan was <strong>offline</strong> at ${safeText(when)}`;
       if (latest.status === "interrupted") return `Last scan was <strong>interrupted</strong>`;
+      const headlines = Number(latest.headlinesCount) || 0;
       const found = Number(latest.findingsCount) || 0;
       const updated = Number(latest.updatedCount) || 0;
-      const news = found ? `${found} new` : updated ? `${updated} updated` : "nothing new";
-      return `Updated <strong>${safeText(when)}</strong>, ${safeText(news)}`;
+      const parts = [];
+      if (headlines) parts.push(`${headlines} new headline${headlines === 1 ? "" : "s"}`);
+      if (found) parts.push(`${found} new on the radar`);
+      else if (updated) parts.push(`${updated} updated on the radar`);
+      return `Updated <strong>${safeText(when)}</strong>, ${safeText(parts.join(", ") || "nothing new")}`;
     }
 
     // A cloud schedule can stop without anyone noticing, so the page itself says when it's old.
@@ -1316,6 +1717,7 @@
     }
 
     function showStatus() {
+      els.editionDate.textContent = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
       els.scanStatus.innerHTML = describeLastScan();
       showNotice(staleNotice());
       const repository = /^[\w.-]+\/[\w.-]+$/.test(state.meta.repository || "") ? state.meta.repository : "";
@@ -1328,7 +1730,14 @@
     async function checkForUpdates() {
       try {
         const data = await loadFrankyData();
-        if (data.meta.generatedAt !== state.meta.generatedAt) applyData(data);
+        if (data.meta.generatedAt !== state.meta.generatedAt) {
+          applyData(data);
+        } else {
+          // Nothing new, but "3h ago" keeps aging, so the lists that show it are redrawn.
+          renderFront();
+          renderDesks();
+          renderStats(getLatestRunId());
+        }
         showStatus();
       } catch (error) {
         showNotice(`Couldn't check for new data (${error.message}). Showing what was last loaded. This page tries again on its own.`);
@@ -1337,8 +1746,8 @@
 
     /* ---------- Controls ---------- */
 
-    function scrollToFeed() {
-      byId("main").scrollIntoView({ block: "start", behavior: prefersReducedMotion() ? "auto" : "smooth" });
+    function scrollToSection(id) {
+      byId(id).scrollIntoView({ block: "start", behavior: prefersReducedMotion() ? "auto" : "smooth" });
     }
 
     function setView(view) {
@@ -1365,9 +1774,13 @@
         if (!target) return;
         if (target.dataset.view) {
           setView(target.dataset.view);
-          scrollToFeed();
+          scrollToSection("radar");
         } else if (target.dataset.jump) {
-          byId(target.dataset.jump).scrollIntoView({ block: "start", behavior: prefersReducedMotion() ? "auto" : "smooth" });
+          scrollToSection(target.dataset.jump);
+        } else if (target.dataset.desk) {
+          const desk = target.dataset.desk;
+          state.deskShown[desk] = (state.deskShown[desk] || DESK_PREVIEW) + DESK_STEP;
+          renderDesks();
         } else if (target.dataset.sort) {
           state.sort = target.dataset.sort;
           renderFilteredViews();
@@ -1395,8 +1808,9 @@
 
     async function init() {
       try {
-        bindTicker();
+        bindTickers();
         bindEvents();
+        renderDeskLinks();
         applyData(await loadFrankyData());
         showStatus();
         setInterval(checkForUpdates, CHECK_EVERY_MS);
@@ -1407,10 +1821,11 @@
         window.addEventListener("focus", checkForUpdates);
       } catch (error) {
         console.error(error);
-        els.ticker.classList.add("is-empty");
-        els.tickerTrack.innerHTML = `<p class="ticker-empty">No data yet.</p>`;
+        const top = byId("ticker");
+        top.classList.add("is-empty");
+        top.querySelector(".ticker-track").innerHTML = `<p class="ticker-empty">No data yet.</p>`;
         els.scanStatus.textContent = "No data yet";
-        byId("page").innerHTML = `
+        byId("main").innerHTML = `
           <div class="empty">
             <b>Franky Frontier couldn't load its data</b>
             If this site was only just set up, the first scan may not have finished yet. Try again in a few minutes. (${safeText(error.message)})

@@ -131,9 +131,11 @@ class SiteBuild(Base):
     def test_keeps_the_data_contract_the_page_reads(self):
         out, _ = self.build()
         data = json.loads((out / "data.json").read_text(encoding="utf-8"))
-        self.assertTrue({"schema_version", "findings", "summaries", "watchlist", "foundationalTools", "sources", "generated_at", "repository"} <= set(data))
+        self.assertTrue({"schema_version", "headlines", "findings", "summaries", "watchlist", "foundationalTools", "sources", "generated_at", "repository"} <= set(data))
+        self.assertEqual(data["schema_version"], 2)
+        self.assertTrue({"url", "headline", "summary", "source_name", "desk", "date", "published_at", "captured_at", "signal"} <= set(data["headlines"][0]))
         self.assertTrue({"finding_id", "date", "run_id", "headline", "summary", "at_home_use", "source_name", "source_tier", "source_url", "device_access_technical_barrier", "priority", "score", "status", "notes"} <= set(data["findings"][0]))
-        self.assertTrue({"run_id", "run_date", "finished_at", "summary", "top_takeaway", "num_findings", "num_updated", "num_watchlist_items", "status", "link_to_report"} <= set(data["summaries"][0]))
+        self.assertTrue({"run_id", "run_date", "finished_at", "summary", "top_takeaway", "num_findings", "num_updated", "num_watchlist_items", "num_headlines", "status", "link_to_report"} <= set(data["summaries"][0]))
 
     def test_publishes_no_caching_details_or_database(self):
         out, _ = self.build()

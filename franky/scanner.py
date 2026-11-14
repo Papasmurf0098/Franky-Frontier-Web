@@ -1,5 +1,8 @@
 """The scan pipeline: collect, score, merge, store. It runs inside GitHub Actions.
 
+Everything fresh that a source reports goes on the news wire (the headlines table). The radar
+(findings and the watchlist) is the scored subset, and sources marked wire_only skip it.
+
 Each source fails on its own. One broken site never stops the others, and a failing site
 is reported in source health rather than hidden. A re-scan is idempotent: an item is
 identified by its URL and changes only when its content fingerprint changes.
@@ -40,6 +43,12 @@ URL_DATE_TOKEN = re.compile(r"\{(epoch|date)_days_ago:(\d+)\}")
 # API sources must work with no account. A key in the config would also end up in a public repo.
 CREDENTIAL_IN_URL = re.compile(r"(api_?key|access_?token|client_secret|auth|password|token)=", re.I)
 FAILED_STATUSES = {"error", "robots_blocked", "empty", "offline"}
+# The sections of the news hub. Every source files its headlines under one of these.
+DESKS = ("Labs", "Industry", "Research", "Builders", "Community", "Releases")
+DEFAULT_DESK = "Industry"
+WIRE_SUMMARY_LIMIT = 220
+# The wire is news, not an archive. Older headlines are dropped so the history stays small.
+WIRE_KEEP_DAYS = 30
 
 
 class ConfigError(ValueError):
@@ -85,6 +94,10 @@ def load_sources(path: Path) -> List[Dict]:
             value = source.get(key, [])
             if not isinstance(value, list) or not all(isinstance(term, str) for term in value):
                 raise ConfigError("source %s needs %s to be a list of words" % (name, key))
+        if source.get("desk", DEFAULT_DESK) not in DESKS:
+            raise ConfigError("source %s has unknown desk %s. Use one of: %s" % (name, source.get("desk"), ", ".join(DESKS)))
+        if not isinstance(source.get("wire_only", False), bool):
+            raise ConfigError("source %s needs wire_only to be true or false" % name)
         if source["trust_tier"] not in VALID_TIERS:
             raise ConfigError("source %s has unknown trust tier %s" % (name, source["trust_tier"]))
         if source["kind"] == "page" and not source.get("article_path"):
@@ -168,15 +181,12 @@ def _without_excluded_titles(entries: List[Dict], source: Dict) -> List[Dict]:
     return [entry for entry in entries if not re.search(pattern, entry["title"])] if pattern else entries
 
 
-def _collect_api(source: Dict, text: str, store: Store) -> Dict:
-    try:
-        data = json.loads(text)
-    except ValueError as exc:
-        raise AdapterError("response is not valid JSON: %s" % exc) from exc
-    entries = _without_excluded_titles(ADAPTERS[source["adapter"]](data), source)
-
+def _on_topic(entries: List[Dict], source: Dict) -> List[Dict]:
+    """Apply a source's require_keywords and exclude_keywords. General feeds need this to stay on AI."""
     required = source.get("require_keywords") or []
     excluded = source.get("exclude_keywords") or []
+    if not required and not excluded:
+        return entries
     kept = []
     for entry in entries:
         haystack = ("%s %s" % (entry["title"], entry["summary"])).lower()
@@ -185,7 +195,16 @@ def _collect_api(source: Dict, text: str, store: Store) -> Dict:
         if has_any(haystack, excluded):
             continue
         kept.append(entry)
-    kept = kept[: int(source.get("max_items", 8))]
+    return kept
+
+
+def _collect_api(source: Dict, text: str, store: Store) -> Dict:
+    try:
+        data = json.loads(text)
+    except ValueError as exc:
+        raise AdapterError("response is not valid JSON: %s" % exc) from exc
+    entries = _without_excluded_titles(ADAPTERS[source["adapter"]](data), source)
+    kept = _on_topic(entries, source)[: int(source.get("max_items", 8))]
 
     items: List[Dict] = []
     for entry in kept:
@@ -207,6 +226,7 @@ def _collect_api(source: Dict, text: str, store: Store) -> Dict:
                 "text": "",
                 "url": url,
                 "published": entry["published"],
+                "published_at": entry.get("published_at", ""),
                 "published_source": "api" if entry["published"] else "unknown",
                 "status": "updated" if seen else "new",
                 "fingerprint": mark,
@@ -220,7 +240,10 @@ def _collect_api(source: Dict, text: str, store: Store) -> Dict:
 def _collect_feed(source: Dict, text: str, final_url: str, domain: str, store: Store, fetcher: Fetcher) -> Dict:
     # A generous read first, because excluded titles shouldn't use up the item limit.
     entries = _without_excluded_titles(parse_feed(text, final_url, max_items=FEED_READ_LIMIT), source)
-    entries = entries[: int(source.get("max_items", 8))]
+    readable = len(entries)
+    entries = _on_topic(entries, source)[: int(source.get("max_items", 8))]
+    # Wire-only sources supply headlines, so their article pages are never read.
+    read_articles = source.get("read_articles", not source.get("wire_only"))
     items: List[Dict] = []
     article_errors = 0
     failures_in_a_row = 0
@@ -243,12 +266,13 @@ def _collect_feed(source: Dict, text: str, final_url: str, domain: str, store: S
             "text": "",
             "url": url,
             "published": entry["published"],
+            "published_at": entry.get("published_at", ""),
             "published_source": "feed:entry" if entry["published"] else "unknown",
             "status": "updated" if seen else "new",
             "fingerprint": mark,
         }
         # Some feeds carry only a title. Read the article only when the feed isn't enough.
-        if len(entry["summary"]) < SHORT_SUMMARY_CHARS and source.get("read_articles", True):
+        if len(entry["summary"]) < SHORT_SUMMARY_CHARS and read_articles:
             if failures_in_a_row >= ARTICLE_FAILURE_LIMIT:
                 if not entry["summary"]:
                     deferred += 1
@@ -261,6 +285,7 @@ def _collect_feed(source: Dict, text: str, final_url: str, domain: str, store: S
                     item["description"] = entry["summary"] or _description(info, source)
                     if not item["published"] and info["published"]:
                         item["published"] = str(info["published"])
+                        item["published_at"] = ""
                         item["published_source"] = str(info["published_source"])
                 except FetchError as exc:
                     article_errors += 1
@@ -273,7 +298,8 @@ def _collect_feed(source: Dict, text: str, final_url: str, domain: str, store: S
         items.append(item)
     return {
         "items": items,
-        "seen": len(entries),
+        # A feed whose entries are all off topic was still read fine, so that isn't "empty".
+        "seen": len(entries) or readable,
         "article_errors": article_errors,
         "first_error": first_error,
         "deferred": deferred,
@@ -334,6 +360,7 @@ def _collect_page(source: Dict, text: str, final_url: str, domain: str, store: S
                 "text": str(info["text"]),
                 "url": url,
                 "published": str(info["published"]),
+                "published_at": "",
                 "published_source": str(info["published_source"]),
                 "status": "updated" if seen else "new",
                 "fingerprint": mark,
@@ -514,6 +541,44 @@ def _save_entry(conn, entry: Dict, run_id: str, run_date: str, now: datetime) ->
     return created
 
 
+def _save_headline(conn, entry: Dict, run_id: str, now: datetime) -> bool:
+    """Put one item on the news wire. Returns True when it is a headline the wire didn't have."""
+    item, source = entry["item"], entry["source"]
+    url = item["url"]
+    summary = _shorten(item["description"], WIRE_SUMMARY_LIMIT)
+    known = conn.execute("SELECT source_name FROM headlines WHERE url = ?", (url,)).fetchone()
+    if known:
+        # The first source to report a page keeps it, the same rule the findings follow.
+        if known["source_name"] == source["name"]:
+            conn.execute(
+                "UPDATE headlines SET headline = ?, summary = ?, signal = ? WHERE url = ?",
+                (item["title"], summary, item.get("signal", ""), url),
+            )
+        return False
+    conn.execute(
+        """
+        INSERT INTO headlines (url, run_id, date, published_at, captured_at, headline, summary,
+                               source_name, company, desk, source_tier, signal)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            url,
+            run_id,
+            item.get("published") or "",
+            item.get("published_at") or "",
+            iso(now),
+            item["title"],
+            summary,
+            source["name"],
+            source["company"],
+            source.get("desk", DEFAULT_DESK),
+            source["trust_tier"],
+            item.get("signal", ""),
+        ),
+    )
+    return True
+
+
 def _remember(conn, entry: Dict, outcome: str, now: datetime) -> None:
     item = entry["item"]
     conn.execute(
@@ -605,6 +670,8 @@ def _tidy_item(item: Dict, today: date) -> None:
     if published and published > (today + timedelta(days=1)).isoformat():
         item["published"] = ""
         item["published_source"] = "unknown"
+    if not item.get("published"):
+        item["published_at"] = ""
 
 
 def _write_report(store: Store, run_row: Dict, findings: List[Dict], watch: List[Dict], failed: List[Dict]) -> Tuple[Optional[Path], str]:
@@ -652,7 +719,7 @@ def _run_locked(store, sources, fetcher, trigger, force, moment, local_day) -> D
         to_check.append(source)
 
     if not to_check:
-        return {"run_id": None, "status": "nothing_due", "sources": skipped, "findings": 0, "updated": 0, "watchlist": 0}
+        return {"run_id": None, "status": "nothing_due", "sources": skipped, "findings": 0, "updated": 0, "watchlist": 0, "headlines": 0}
 
     run_date = local_day.isoformat()
     with store.transaction() as conn:
@@ -687,6 +754,8 @@ def _run_locked(store, sources, fetcher, trigger, force, moment, local_day) -> D
         assessed: List[Dict] = []
         stale: List[Dict] = []
         set_aside: List[Dict] = []
+        wire: List[Dict] = []
+        wire_only: List[Dict] = []
         for result in results:
             for item in result["items"]:
                 _tidy_item(item, local_day)
@@ -695,6 +764,11 @@ def _run_locked(store, sources, fetcher, trigger, force, moment, local_day) -> D
                 entry = {"item": item, "source": result["source"], "assessment": assessment, "also": []}
                 if assessment["stale"]:
                     stale.append(entry)
+                    continue
+                # Everything fresh is news, including what the radar sets aside below.
+                wire.append(entry)
+                if result["source"].get("wire_only"):
+                    wire_only.append(entry)
                 elif result["source"].get("require_usable") and not assessment["usable"]:
                     # A busy forum is mostly opinion, which isn't an opportunity.
                     set_aside.append(entry)
@@ -705,6 +779,7 @@ def _run_locked(store, sources, fetcher, trigger, force, moment, local_day) -> D
         new_findings: List[Dict] = []
         updated_findings: List[Dict] = []
         new_watch: List[Dict] = []
+        new_headlines = 0
         failed = [r for r in results if r["status"] in FAILED_STATUSES]
         checked = len(results)
         failed_note = " %d could not be read." % len(failed) if failed else ""
@@ -728,6 +803,11 @@ def _run_locked(store, sources, fetcher, trigger, force, moment, local_day) -> D
                 _remember(conn, entry, "stale", moment)
             for entry in set_aside:
                 _remember(conn, entry, "set_aside", moment)
+            for entry in wire_only:
+                _remember(conn, entry, "wire", moment)
+            for entry in wire:
+                new_headlines += 1 if _save_headline(conn, entry, run_id, moment) else 0
+            conn.execute("DELETE FROM headlines WHERE captured_at < ?", (iso(moment - timedelta(days=WIRE_KEEP_DAYS)),))
             for result in results:
                 _save_source_state(conn, result, states[result["source"]["url"]], moment)
             for item in skipped:
@@ -742,6 +822,8 @@ def _run_locked(store, sources, fetcher, trigger, force, moment, local_day) -> D
             )
             if set_aside:
                 summary += " %d set aside as discussion with no clear use." % len(set_aside)
+            if new_headlines:
+                summary += " %d new on the news wire." % new_headlines
             if offline:
                 summary = "Couldn't reach any of the %d sources. The scan itself looks offline, so nothing was checked." % checked
             start_day = previous["run_date"] if previous else (local_day - timedelta(days=60)).isoformat()
@@ -749,7 +831,7 @@ def _run_locked(store, sources, fetcher, trigger, force, moment, local_day) -> D
             conn.execute(
                 """
                 UPDATE runs SET status = ?, finished_at = ?, time_range = ?, summary = ?, top_takeaway = ?,
-                       num_findings = ?, num_updated = ?, num_watchlist_items = ?, sources_json = ?
+                       num_findings = ?, num_updated = ?, num_watchlist_items = ?, num_headlines = ?, sources_json = ?
                 WHERE run_id = ?
                 """,
                 (
@@ -761,6 +843,7 @@ def _run_locked(store, sources, fetcher, trigger, force, moment, local_day) -> D
                     len(new_findings),
                     len(updated_findings),
                     len(new_watch),
+                    new_headlines,
                     json.dumps(
                         [{"name": r["source"]["name"], "status": r["status"], "detail": r.get("detail", ""), "seen": r.get("seen", 0), "emitted": len(r["items"])} for r in results] + skipped
                     ),
@@ -789,6 +872,7 @@ def _run_locked(store, sources, fetcher, trigger, force, moment, local_day) -> D
         "findings": len(new_findings),
         "updated": len(updated_findings),
         "watchlist": len(new_watch),
+        "headlines": new_headlines,
         "stale": len(stale),
         "set_aside": len(set_aside),
         "merged": len(merged),

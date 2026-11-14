@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS runs (
   num_findings INTEGER DEFAULT 0,
   num_updated INTEGER DEFAULT 0,
   num_watchlist_items INTEGER DEFAULT 0,
+  num_headlines INTEGER DEFAULT 0,
   report_name TEXT,
   sources_json TEXT
 );
@@ -69,6 +70,22 @@ CREATE TABLE IF NOT EXISTS watchlist (
   notes TEXT
 );
 
+-- The news wire: every fresh item a source reported, scored or not. Pruned after 30 days.
+CREATE TABLE IF NOT EXISTS headlines (
+  url TEXT PRIMARY KEY,
+  run_id TEXT NOT NULL,
+  date TEXT NOT NULL DEFAULT '',
+  published_at TEXT NOT NULL DEFAULT '',
+  captured_at TEXT NOT NULL,
+  headline TEXT NOT NULL,
+  summary TEXT,
+  source_name TEXT,
+  company TEXT,
+  desk TEXT,
+  source_tier TEXT,
+  signal TEXT
+);
+
 CREATE TABLE IF NOT EXISTS foundational_tools (
   tool_id TEXT PRIMARY KEY,
   date_added TEXT,
@@ -107,6 +124,10 @@ CREATE TABLE IF NOT EXISTS source_state (
 CREATE INDEX IF NOT EXISTS idx_findings_run ON findings(run_id);
 """
 
+# data.json carries at most this many headlines per desk, newest first, so one busy desk
+# can't crowd out the others and the page stays quick to load.
+HEADLINES_PER_DESK = 150
+
 
 class Store:
     def __init__(self, data_dir: Path):
@@ -119,6 +140,9 @@ class Store:
         conn = self.connect()
         try:
             conn.executescript(SCHEMA)
+            # A history saved before the news wire existed has a runs table without this column.
+            if "num_headlines" not in [row["name"] for row in conn.execute("PRAGMA table_info(runs)")]:
+                conn.execute("ALTER TABLE runs ADD COLUMN num_headlines INTEGER DEFAULT 0")
             conn.execute(
                 "INSERT OR REPLACE INTO meta (key, value) VALUES ('data_schema_version', ?)",
                 (str(DATA_SCHEMA_VERSION),),
@@ -198,6 +222,42 @@ class Store:
                     ),
                 )
 
+    def backfill_headlines(self, sources: List[Dict], cutoff: str) -> int:
+        """Copy recent findings onto the wire, for history saved before the wire existed.
+
+        Only findings whose source is still in the config are copied, because the desk comes
+        from there. Safe to repeat: a headline already on the wire is left alone.
+        """
+        desks = {source["name"]: source.get("desk") or "Industry" for source in sources}
+        added = 0
+        with self.transaction() as conn:
+            rows = conn.execute("SELECT * FROM findings WHERE captured_at >= ? ORDER BY captured_at, source_url", (cutoff,)).fetchall()
+            for row in rows:
+                if row["source_name"] not in desks:
+                    continue
+                date_known = "publish_date_unknown" not in (row["notes"] or "")
+                cursor = conn.execute(
+                    """
+                    INSERT OR IGNORE INTO headlines (url, run_id, date, published_at, captured_at, headline, summary,
+                                                     source_name, company, desk, source_tier, signal)
+                    VALUES (?, ?, ?, '', ?, ?, ?, ?, ?, ?, ?, '')
+                    """,
+                    (
+                        row["source_url"],
+                        row["first_run_id"],
+                        row["date"] if date_known else "",
+                        row["captured_at"],
+                        row["headline"],
+                        (row["summary"] or "")[:240],
+                        row["source_name"],
+                        row["tool_or_company"],
+                        desks[row["source_name"]],
+                        row["source_tier"],
+                    ),
+                )
+                added += cursor.rowcount
+        return added
+
     def dashboard_data(self) -> Dict:
         """The body of data.json. site/index.html depends on these exact keys. See AGENT.md."""
         with self.reader() as conn:
@@ -219,6 +279,22 @@ class Store:
                 )
             ]
             sources = [dict(r) for r in conn.execute("SELECT * FROM source_state ORDER BY name")]
+            wire = [
+                dict(r)
+                for r in conn.execute(
+                    """
+                    SELECT * FROM headlines
+                    ORDER BY COALESCE(NULLIF(published_at, ''), NULLIF(date, ''), captured_at) DESC, captured_at DESC, url
+                    """
+                )
+            ]
+
+        per_desk: Dict[str, int] = {}
+        headlines = []
+        for row in wire:
+            per_desk[row["desk"]] = per_desk.get(row["desk"], 0) + 1
+            if per_desk[row["desk"]] <= HEADLINES_PER_DESK:
+                headlines.append(row)
 
         for row in findings:
             row["score_breakdown"] = json.loads(row["score_breakdown"] or "{}")
@@ -234,6 +310,7 @@ class Store:
         return {
             "schema_version": DATA_SCHEMA_VERSION,
             "updatedAt": runs[0]["finished_at"] if runs else "",
+            "headlines": headlines,
             "findings": findings,
             "summaries": summaries,
             "watchlist": watchlist,
