@@ -243,7 +243,6 @@ class Config(unittest.TestCase):
     def test_the_page_knows_every_desk(self):
         for desk in DESKS:
             self.assertIn('{ id: "%s"' % desk, HTML)
-            self.assertIn(".tone-%s {" % desk.lower(), HTML)
 
     def test_source_names_are_unique(self):
         # Source health and the backfill both look sources up by name.

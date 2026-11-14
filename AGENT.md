@@ -8,7 +8,7 @@ Read this before changing anything. It is the source of truth for what this proj
 
 It has two layers, and the owner asked for both (November 13, 2026):
 
-- **The news wire:** every fresh headline from about 70 AI sources, filed under six desks and shown in moving banners and desk columns. The wire reports what publishers said. It doesn't judge.
+- **The news wire:** every fresh headline from about 70 AI sources, filed under six desks and shown on rolling tapes, boards and desk columns. The wire reports what publishers said. It doesn't judge.
 - **The radar:** the scored subset, which keeps what someone could actually use at home and ranks it. In the original dashboard's words, the radar should stay "practical, current, and allergic to hype".
 
 "Web only" means nothing runs on or is saved to anyone's device. GitHub Actions does the scan, a branch in this repo holds the history, and GitHub Pages serves the site. Closing every laptop changes nothing.
@@ -43,12 +43,14 @@ GitHub Actions, every 3 hours (.github/workflows/scan.yml)
 |---|---|
 | Which sites are scanned | `config/sources.json` |
 | Which desk a source files under, or whether it's scored | `desk` and `wire_only` on the source |
-| The list of desks | `DESKS` in `franky/scanner.py` and `DESKS` in `site/index.html`, plus a `.tone-` color |
-| The moving banners | `TICKERS` in `site/index.html`, plus a `<section class="ticker">` for each |
+| The list of desks | `DESKS` in `franky/scanner.py` and `DESKS` in `site/index.html` |
+| The tapes and boards | `TICKERS` in `site/index.html`, plus a `<section class="ticker">` for each. A board is a tape with `axis: "y"` and the class `is-board` |
+| The spotlight and desk tiles | `ROTATORS`, `showSpot` and `showTile` in `site/index.html` |
+| The pages | `PAGES` and `readHash` in `site/index.html`, plus a `<div class="page" data-page="...">` |
 | The tools shelf | `config/foundational_tools.json` |
 | What counts as useful or hype | `franky/scoring.py`, then read a real scan's results |
 | What the site shows | `site/index.html` |
-| How often it scans | The cron line in `scan.yml`, plus `SCAN_EVERY_HOURS` in `site/index.html` |
+| How often it scans | The cron line in `scan.yml`, plus `SCAN_EVERY_HOURS` and `SCAN_MINUTE_UTC` in `site/index.html`, which drive the countdown |
 
 ## Rules that must stay true
 
@@ -78,7 +80,7 @@ GitHub Actions, every 3 hours (.github/workflows/scan.yml)
 
 ## Sources
 
-All are in `config/sources.json`, and none needs an account. There are 71. Every source has a `desk`. A source with `wire_only: true` supplies headlines only: nothing from it is scored, and its article pages are never read.
+All are in `config/sources.json`, and none needs an account. There are 69. Every source has a `desk`. A source with `wire_only: true` supplies headlines only: nothing from it is scored, and its article pages are never read.
 
 **The radar sources** are the table below, plus Mistral AI News, Google Developers Blog, Ollama Blog and n8n Blog, added November 13, 2026.
 
@@ -98,13 +100,15 @@ All are in `config/sources.json`, and none needs an account. There are 71. Every
 | Desk | Sources |
 |---|---|
 | Labs | Google DeepMind, NVIDIA Blog, Meta Engineering |
-| Industry | TechCrunch, The Verge, Ars Technica, MIT Technology Review, WIRED, The Decoder, The Guardian, ZDNET, Gizmodo, Fast Company, SiliconANGLE, The New Stack, IEEE Spectrum, InfoWorld, 9to5Mac, MarkTechPost, and CNBC, Engadget, Tom's Hardware and 404 Media filtered to AI |
+| Industry | TechCrunch, The Verge, Ars Technica, MIT Technology Review, WIRED, The Decoder, The Guardian, ZDNET, Fast Company, SiliconANGLE, The New Stack, IEEE Spectrum, InfoWorld, 9to5Mac, MarkTechPost, and CNBC, Engadget, Tom's Hardware and 404 Media filtered to AI |
 | Research | Hugging Face daily papers (JSON API, `hugging_face_papers`), Google Research, Microsoft Research, Apple ML Research, Berkeley AI Research, MIT News, ScienceDaily, Nature |
-| Builders | Simon Willison, Latent Space, Import AI, One Useful Thing, Interconnects, Ahead of AI, AWS ML Blog, GitHub Blog, Cloudflare, NVIDIA Developer, PyTorch, Together AI, KDnuggets, Towards Data Science |
+| Builders | Simon Willison, Latent Space, Import AI, One Useful Thing, Interconnects, Ahead of AI, AWS ML Blog, GitHub Blog, Cloudflare, NVIDIA Developer, PyTorch, Together AI, KDnuggets |
 | Community | Two more Hacker News searches |
 | Releases | Trending Hugging Face models, and release feeds for Open WebUI, ComfyUI, Transformers, Claude Code, vLLM and LLM CLI |
 
 General feeds (NVIDIA, Meta, CNBC, Engadget, Tom's Hardware, 404 Media) use `require_keywords` to stay on AI. Check a new general feed's real results, because a keyword list lets some off-topic stories through.
+
+**Removed on November 14, 2026:** Gizmodo AI and Towards Data Science. Both read fine from a laptop, but on the first GitHub run their `robots.txt` blocked the scanner. Rule 13 says to leave them out.
 
 **Checked on November 13, 2026 and left out:** The Register and Reuters (`robots.txt` disallows), VentureBeat (429 on the first request, twice), Axios (403), Bloomberg, LangChain and InfoQ (the feed or its links leave the source's domain), Cohere and Stanford HAI (the feed declares a DOCTYPE), Stability AI and AI News (not valid XML), Meta AI, xAI, Perplexity, LM Studio and The Batch (no feed), Microsoft's AI blog (410). llama.cpp and LangChain release feeds are a build per commit, which is noise.
 
@@ -116,15 +120,22 @@ General feeds (NVIDIA, Meta, CNBC, Engadget, Tom's Hardware, 404 Media) use `req
 
 `tests/test_dashboard_design.py` and `tests/test_web_only.py` enforce the checkable parts.
 
-- **Every banner needs its own visible pause button.** Moving content that lasts over five seconds must be pausable under WCAG 2.2.2, and pausing on hover or honoring reduced motion doesn't replace that. The **Pause banners** button in the nav bar is an extra, not a replacement. Keep the skip link too.
-- **Don't call a banner "live".** Scans run every 3 hours at best.
-- **Blur only the top banner, nav bar, lead story, Just in and side panels.** Never blur the other banners, desk columns or list cards, because many blurred layers slow a scrolling page.
-- **A banner shows a fixed time, not "3h ago".** Banners aren't redrawn between scans, so a relative time would go out of date.
-- **Each desk has one accent color.** A new one needs a `--token`, a `.tone-` class, and a place in both contrast tests.
-- **Glass has to stay readable.** New colors must pass the contrast test against the worst-case backdrop, and glass keeps its solid fallbacks.
-- **No outside fonts, images or scripts.** The page's Content-Security-Policy would block them anyway.
+The owner's brief (November 14, 2026): sleek, not blocky. Glass where it helps, no solid borders, obsidian with turquoise accents, a background image, and a home page that feels like a trading floor. The back pages can be still.
+
+- **Only the home page moves.** Every tape, board, tile and the spotlight belong to `data-page="home"`. The Wire, Radar and Sources pages stand still, apart from the top tape above them.
+- **Everything that moves needs its own visible pause button.** Moving content that lasts over five seconds must be pausable under WCAG 2.2.2, and pausing on hover or honoring reduced motion doesn't replace that. This covers tapes, boards, the spotlight and the desk tiles. **Pause motion** in the top bar is an extra that also stops the background. Keep the skip link too.
+- **Rotation is timed by CSS animations, not JavaScript timers.** The spotlight advances when its progress line finishes, and a tile turns when its bottom line loops. So pausing the animation (the button, hovering, keyboard focus, a hidden page, reduced motion) pauses the rotation, with no timer to keep in step.
+- **Don't call anything "live".** Scans run every 3 hours at best. The countdown says a scan is "due", because GitHub starts scheduled runs late.
+- **Blur only the top tape, top bar, spotlight, Just in and the radar's side panels.** Never blur the other tapes and boards, tiles, desk columns or list cards, because many blurred layers slow a scrolling page.
+- **No solid borders.** Panels get their edge from a faint inner hairline (`--edge`), a gradient, or nothing. Dividers are hairlines (`--line`, `--line-soft`) that fade out. Desk columns have no box at all.
+- **Turquoise is the only accent.** Amber is for warnings and coral for failures. Desks are told apart by name, not color. Don't bring back per-desk colors without asking.
+- **A tape, board or tile shows a fixed time, not "3h ago".** They aren't redrawn between scans, so a relative time would go out of date.
+- **Glass has to stay readable.** New colors must pass the contrast test against the worst-case backdrop, and glass keeps its solid fallbacks. If the background gets brighter, raise `BRIGHTEST_BACKDROP` in the test first.
+- **The background image is drawn in the page.** It's an inline SVG and CSS gradients. No outside fonts, images or scripts, and the page's Content-Security-Policy would block them anyway.
 - **All paths are relative.** Pages serves the site from `/<repo>/`, so a path starting with `/` misses it.
-- **Hierarchy over decoration.** One lead story, then Just in, then the desks, then the radar. The lead and Just in are left out of the desk columns, and the radar feed starts after its ranked strip. Banners may repeat what's on the page, and a radar item may also be on its desk, because the radar is a second look at the same wire.
+- **Pages are sections switched by the address after `#`.** There's still one HTML file and no build step. An unknown hash, like the skip link's `#main`, leaves the current page showing.
+- **The home page may repeat itself.** A headline can be on a tape, a board and a tile at once, because the home page is for glancing. The Wire page lists each headline once.
+- **Every number is counted from the data.** The 24-hour counts, the hourly chart and the per-source tape come from headline times. The chart only counts headlines whose feed gave a time of day, and says how many it left out.
 - **Never invent a time.** A headline with no publish date says when a scan first saw it.
 - **Read dates with `parseDay`.** `new Date("2026-11-03")` means UTC midnight, which shows as the day before in the Americas.
 
@@ -144,20 +155,23 @@ python3 -m franky run --state-dir /tmp/franky-state --out /tmp/franky-site --for
 
 ## Current state
 
-Last updated November 13, 2026 (UTC).
+Last updated November 14, 2026 (UTC).
 
-**November 13, 2026: rebuilt as a news hub. Not pushed or run on GitHub yet.** Added the news wire (the `headlines` table, `headlines` in `data.json`, schema version 2), 58 sources, four moving banners, the desks, and one search for everything. Scans moved from every 6 hours to every 3.
+**November 14, 2026: redesigned, and two blocked sources removed. Committed on a laptop, not pushed or run on GitHub yet.** The page is now four pages in one file (Home, Wire, Radar, Sources). The home page has eight tapes and boards, a rotating spotlight, desk tiles that turn, count-up numbers, an hourly chart, a clock and a countdown to the next scan. The look is obsidian and turquoise with no solid borders. Nothing changed in the scanner or in `data.json`.
 
-**Checked for this change:** 220 offline tests pass on Python 3.9. Two real scans of all 71 sources ran from a laptop into a throwaway folder. The first stored 441 headlines, 65 findings and 13 watchlist items, and 70 of 71 sources answered (Google DeepMind returned something that wasn't XML once). The second, from an empty history, read all 71 and stored 447 headlines, and a repeat scan straight after found nothing due and added nothing. The built site was viewed in a browser at desktop and phone widths: all four banners moved, each pause button and **Pause banners** worked, search filtered the desks and the radar, the console was empty, nothing was stored, and the page made no requests off the site.
+**Checked for this change:** 223 offline tests pass on Python 3.9. The page was viewed in a browser with the live site's `data.json`, at desktop and phone widths: every tape and board rolled, the spotlight advanced, the tiles turned, **Pause motion** froze all of it and started it again, each page opened from its link, a search opened the Wire page and counted radar matches, a link to a desk scrolled to it, the skip link didn't change the page, the console was empty, nothing was stored, and nothing overflowed sideways.
 
 **Not checked for this change:**
-- Any run on GitHub. The first one restores a history saved before the wire existed. A test covers that with a made-up history, but not the real `scan-state` branch.
-- Whether all 58 new sources answer from GitHub's cloud. Some sites block cloud servers, and Source health will show which.
-- How long a scan of 71 sources takes on a runner. It took about a minute from a laptop, and the job limit is 15 minutes.
-- The page with hostile headline data in a browser. Every new list goes through `safeText` and `safeUrl`, the same as before.
-- The banners with the system Reduce Motion setting on.
+- The new page on the live site.
+- The page with the system Reduce Motion setting on. The CSS turns every animation off and makes the tapes scrollable, but nobody has looked at it.
+- The page with hostile headline data in a browser. Every new list goes through `safeText` and `safeUrl`.
+- Scrolling speed on a slow phone with this many moving parts.
 
-The notes below are from the first release and still hold, except that there are now 71 sources and scans run every 3 hours.
+**November 13, 2026: rebuilt as a news hub.** Added the news wire (the `headlines` table, `headlines` in `data.json`, schema version 2), 58 sources, the desks, and one search for everything. Scans moved from every 6 hours to every 3.
+
+**First GitHub run of the news hub, November 14, 2026 (UTC):** a push-triggered run passed every step in about 80 seconds. It restored the real `scan-state` history saved before the wire existed, and published 455 headlines, 127 findings and 33 watchlist items. 67 of 71 sources were read or unchanged. Gizmodo AI and Towards Data Science were blocked by `robots.txt` from GitHub's cloud, and have been removed.
+
+The notes below are from the first release and still hold, except that there are now 69 sources and scans run every 3 hours.
 
 **Live at <https://papasmurf0098.github.io/Franky-Frontier-Web/>.**
 
@@ -218,3 +232,8 @@ Add a line when you make a decision a future agent might otherwise undo.
 - **2026-11-13: Scans every 3 hours, and the press has a 2-hour cadence.** A cadence equal to the schedule would skip every other run, because a run rarely starts exactly on time.
 - **2026-11-13: Old findings are copied onto the wire at the start of each run.** The history predates the wire, and without this the Labs desk would start without OpenAI's or Anthropic's recent posts. It only copies findings from the last 30 days and skips what's already there.
 - **2026-11-13: One search box for the whole page.** Two boxes, one for headlines and one for the radar, made people guess which to use.
+- **2026-11-14: The home page moves and the back pages don't.** The owner wanted a trading-floor feel on the home page and said the back pages can be still. Don't add tapes to the Wire, Radar or Sources pages.
+- **2026-11-14: One accent color.** The owner asked for obsidian with turquoise accents, so the six desk colors and the violet were removed.
+- **2026-11-14: Pages are hash routes in the one HTML file.** Separate HTML files would need shared code copied into each, or a build step, which rule 3 rules out.
+- **2026-11-14: Rotation runs on CSS animation events.** A JavaScript timer would need its own pause, hover, focus and hidden-tab handling, and would drift from the progress line people see.
+- **2026-11-14: The source tape shows counts, not changes.** `data.json` carries at most 150 headlines per desk, so "up 3 on yesterday" could be wrong for a busy desk. A plain count can't be.

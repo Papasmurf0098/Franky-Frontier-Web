@@ -21,12 +21,14 @@ The site appears at `https://<your-username>.github.io/<repo-name>/`, and it upd
 
 ## What's on the page
 
-- **Four moving banners:** the latest headlines across the top, the top of the radar in large type, labs and research, and community and releases. Each has its own pause button, and **Pause banners** in the nav bar stops them all.
-- **Front page:** the lead story and **Just in**, the newest headlines from every desk.
-- **The news desks:** Labs, Industry, Research, Builders, Community and Releases, newest first, with a button to show more.
-- **The radar:** the headlines scored for something you can use at home, with filters, plus the scan memo, watchlist, tools and source health.
+The site has four pages. The home page moves, and the others stand still.
 
-The search box in the nav bar searches every headline and the radar at once.
+- **Home:** a tape of the latest headlines across the top, a spotlight that turns through the top five radar stories, and **Just in** rolling beside it. Below are the numbers, a chart of headlines by the hour, the radar in large type, a tile for each desk that turns through its newest headlines, a tape of how many headlines each source filed, three rolling boards, and a tape of releases. A clock counts down to the next scan.
+- **Wire:** the six desks (Labs, Industry, Research, Builders, Community and Releases), newest first, with a button to show more.
+- **Radar:** the headlines scored for something you can use at home, with filters, plus the scan memo, watchlist and tools.
+- **Sources:** whether each source was read, with failures first.
+
+Every moving part has its own pause button, and **Pause motion** in the top bar stops everything, the background included. The search box searches every headline and the radar at once.
 
 An open page checks for new data every 5 minutes, and whenever you come back to its tab.
 
@@ -43,7 +45,7 @@ About 70 sources, and none needs an account or API key. Each one files its headl
 | Community | Hacker News, new GitHub repos |
 | Releases | Trending models, free OpenRouter models, and new versions of Ollama, Open WebUI, ComfyUI and others |
 
-Most sources are **wire only**: their headlines appear on the desks and banners but aren't scored for the radar. Franky shows a headline and a short summary from the publisher's own feed and links to the publisher. It never opens the articles of wire-only sources.
+Most sources are **wire only**: their headlines appear on the desks, tapes and boards but aren't scored for the radar. Franky shows a headline and a short summary from the publisher's own feed and links to the publisher. It never opens the articles of wire-only sources.
 
 Anyone can post to community sources, so on the radar they rank lower, their cards show a caution, and they need a lot of attention to reach High. Check any project or model yourself before installing it.
 

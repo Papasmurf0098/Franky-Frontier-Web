@@ -39,8 +39,9 @@ def contrast(a, b):
     return (high + 0.05) / (low + 0.05)
 
 
-# The brightest the page background gets: where the violet and turquoise glows overlap.
-BRIGHTEST_BACKDROP = (70, 75, 125)
+# The brightest the page background gets: obsidian under the turquoise glow and the drifting
+# light together, with room to spare.
+BRIGHTEST_BACKDROP = (24, 56, 54)
 
 
 class Contrast(unittest.TestCase):
@@ -49,7 +50,7 @@ class Contrast(unittest.TestCase):
     def test_text_is_readable_on_every_glass_surface(self):
         for surface in ("glass", "glass-card", "glass-bar"):
             behind = over(token(surface), BRIGHTEST_BACKDROP)
-            for text in ("text", "text-soft", "text-faint", "turquoise-400", "violet-300", "amber", "coral", "sky", "lime"):
+            for text in ("text", "text-soft", "text-faint", "turquoise-400", "turquoise-200", "amber", "coral"):
                 ratio = contrast(parse(token(text))[0], behind)
                 self.assertGreaterEqual(ratio, 4.5, "--%s on --%s is only %.2f:1" % (text, surface, ratio))
 
@@ -57,11 +58,11 @@ class Contrast(unittest.TestCase):
         ratio = contrast(parse(token("ink-on-turquoise"))[0], parse(token("turquoise-400"))[0])
         self.assertGreaterEqual(ratio, 4.5)
 
-    def test_banner_labels_are_readable_on_every_desk_color(self):
-        ink = parse(token("obsidian-950"))[0]
-        for accent in ("turquoise-400", "violet-300", "sky", "amber", "coral", "lime"):
-            ratio = contrast(ink, parse(token(accent))[0])
-            self.assertGreaterEqual(ratio, 4.5, "label ink on --%s is only %.2f:1" % (accent, ratio))
+    def test_turquoise_is_the_only_accent(self):
+        # The owner asked for obsidian with turquoise accents. Amber and coral are for
+        # warnings and failures only.
+        for retired in ("--violet", "--sky", "--lime", "tone-labs", "tone-industry"):
+            self.assertNotIn(retired, HTML)
 
 
 class Banner(unittest.TestCase):
@@ -83,6 +84,28 @@ class Banner(unittest.TestCase):
         self.assertIn('id="pauseAll"', HTML)
         self.assertIn("TICKERS.forEach(ticker => setTickerPaused(ticker, pause))", HTML)
 
+    def test_parts_that_rotate_have_pause_controls_too(self):
+        # The spotlight and the desk tiles change by themselves, so 2.2.2 covers them as well.
+        for control in ('id="spotToggle"', 'id="tilesToggle"'):
+            self.assertIn(control, HTML)
+        self.assertIn("ROTATORS.forEach(rotator => setRotatorPaused(rotator, pause))", HTML)
+        # Their timers are CSS animations, so pausing the animation is what pauses them.
+        self.assertIn(".spot.is-paused .spot-progress span { animation-play-state: paused; }", HTML)
+        self.assertIn(".tiles.is-paused .tile-timer { animation-play-state: paused; }", HTML)
+
+    def test_pause_motion_also_stops_the_background(self):
+        self.assertIn("body.is-still .backdrop-glow, body.is-still .beat { animation-play-state: paused; }", HTML)
+        self.assertIn('document.body.classList.toggle("is-still", allPaused)', HTML)
+
+    def test_only_the_home_page_moves(self):
+        # The back pages stand still. Every tape and board belongs to the home page, apart from
+        # the top tape, which sits above all of them.
+        home = HTML[HTML.index('data-page="home"') : HTML.index('data-page="wire"')]
+        back = HTML[HTML.index('data-page="wire"') : HTML.index("<script>")]
+        self.assertGreaterEqual(home.count('<section class="ticker'), 7)
+        self.assertNotIn('<section class="ticker', back)
+        self.assertNotIn("tile-timer", back)
+
     def test_only_the_top_banner_is_blurred(self):
         base = re.search(r"\n    \.ticker \{(.*?)\}", HTML, re.S).group(1)
         self.assertNotIn("backdrop-filter", base)
@@ -91,6 +114,8 @@ class Banner(unittest.TestCase):
         block = re.search(r"@media \(prefers-reduced-motion: reduce\) \{(.*?)\n    \}", HTML, re.S).group(1)
         self.assertIn(".ticker-track", block)
         self.assertIn("animation: none", block)
+        for part in (".backdrop-glow", ".beat", ".tile-timer", ".spot.is-running .spot-progress span"):
+            self.assertIn(part, block)
 
     def test_copies_are_hidden_from_screen_readers_and_the_tab_key(self):
         self.assertIn('copy.setAttribute("aria-hidden", "true")', HTML)
@@ -115,7 +140,7 @@ class OnDevice(unittest.TestCase):
         self.assertIn("-webkit-backdrop-filter", HTML)
 
     def test_blur_is_not_used_on_list_cards(self):
-        for name in ("card", "desk", "top-item", "stat"):
+        for name in ("card", "desk", "top-item", "stat", "tile"):
             rule = re.search(r"\n    \.%s \{(.*?)\}" % name, HTML, re.S).group(1)
             self.assertNotIn("backdrop-filter", rule, name)
 
